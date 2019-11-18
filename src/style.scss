@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css?family=EB+Garamond:100,300,400');
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700');
+
+$main-font: 'EB Garamond', sans-serif;
+
+* {
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  box-sizing: border-box;
+  // font-family: 'EB Garamond', sans-serif;
+}
+
+a:link, a:visited {
+  color: black;
+  text-decoration: none;
+}
