@@ -21,6 +21,11 @@ const Title = styled.h1`
 const SForm = styled.form`
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  height: 500px;
+  padding: 0 40px;
+  border: 1px solid #DADCE0;
+  border-radius: 8px;
 `
 
 const SInput_Container = styled.div`

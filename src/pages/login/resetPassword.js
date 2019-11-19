@@ -21,18 +21,23 @@ const Title = styled.h1`
 const SForm = styled.form`
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  height: 500px;
+  padding: 0 40px;
+  border: 1px solid #DADCE0;
+  border-radius: 8px;
 `
 
 const SInput = styled.input`
   width: 400px;
   height: 40px;
   margin-bottom: 10px;
-  border: ${props => props.logInError ? '1px solid #D93025' : '1px solid #DADCE0'};
+  border: ${props => !props.resetError ? props.resetSuccess ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
   border-radius: 4px;
   padding-left: 10px;
   outline: none;
   font-family: 'Roboto', sans-serif;
-  transition: ${props => props.logInError ? 'border .2s' : 'border .1s'};
+  transition: ${props => props.resetSuccess ? 'border .2s' : 'border .1s'};
 
   :focus {
     border: 1px solid #287AE6;
@@ -52,12 +57,21 @@ const SForgot = styled.div`
 `
 
 const SError = styled.p`
-  opacity: ${props => props.logInError ? 1 : 0};
+  display: ${props => props.resetError ? 'block' : 'none'};
   align-self: flex-end;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   color: #D93025;
-  transition: opacity .2s;
+  transition: display .2s;
+`
+
+const SSuccess = styled.p`
+  display: ${props => props.resetSuccess ? 'block' : 'none'};
+  align-self: flex-end;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  color: #12C2AB;
+  transition: display .2s;
 `
 
 const SSubmit = styled.input`
@@ -86,7 +100,8 @@ const SSubmit = styled.input`
 
 export default function ForgotPassword() {
 
-  const [logInError, setLogInError] = useState(false);
+  const [resetError, setResetError] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const resetCode = useLocation().search.match(/\=(.*)/);
 
@@ -96,8 +111,6 @@ export default function ForgotPassword() {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
 
-
-
     axios
       .post('http://localhost:1337/auth/reset-password', {
         code: resetCode,
@@ -106,10 +119,12 @@ export default function ForgotPassword() {
       })
       .then(response => {
         // Handle success.
+        setResetSuccess(true);
         console.log('Your user\'s password has been changed.');
       })
       .catch(error => {
         // Handle error.
+        setResetError(true);
         console.log('An error occurred:', error);
       });
   }
@@ -121,20 +136,29 @@ export default function ForgotPassword() {
       <SForm onSubmit={sendNewPassword}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="password" name="newpassword" placeholder="new password"
-          logInError={logInError}
+          onKeyDown={_ => resetError ? setResetError(false) : null}
+          resetError={resetError}
+          resetSuccess={resetSuccess}
         />
         <SInput type="password" name="confirm" placeholder="confirm password"
-          logInError={logInError}
+          onKeyDown={_ => resetError ? setResetError(false) : null}
+          resetError={resetError}
+          resetSuccess={resetSuccess}
         />
         <SLoginInfo>
           <SForgot>
             <Link to="/">Back to Login</Link>
           </SForgot>
           <SError
-            logInError={logInError}
+            resetError={resetError}
           >
-            Incorrect email.
+            Invalid password(s).
           </SError>
+          <SSuccess
+            resetSuccess={resetSuccess}
+          >
+            Password changed.
+          </SSuccess>
         </SLoginInfo>
         <SSubmit type="submit" value="Reset" />
       </SForm>
