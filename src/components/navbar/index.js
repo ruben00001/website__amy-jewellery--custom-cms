@@ -13,7 +13,8 @@ const SNavbar = styled.div`
 `;
 
 const SPageLink = styled.div`
-
+  color: black;
+  text-decoration: none;
 `
 
 const Navbar = memo(() => {

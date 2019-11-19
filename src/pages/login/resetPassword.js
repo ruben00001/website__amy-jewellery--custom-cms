@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 
@@ -32,7 +33,6 @@ const SInput = styled.input`
   outline: none;
   font-family: 'Roboto', sans-serif;
   transition: ${props => props.logInError ? 'border .2s' : 'border .1s'};
-  /* transition: border .2s; */
 
   :focus {
     border: 1px solid #287AE6;
@@ -45,7 +45,7 @@ const SLoginInfo = styled.div`
   margin-top: 10px;
 `
 
-const SForgot = styled.p`
+const SForgot = styled.div`
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
   color: #287AE6;
@@ -84,36 +84,32 @@ const SSubmit = styled.input`
 
 
 
-export default function PasswordReset() {
+export default function ForgotPassword() {
 
-  const [token, setToken] = useState(null);
   const [logInError, setLogInError] = useState(false);
 
+  const resetCode = useLocation().search.match(/\=(.*)/);
 
-  // useEffect(_ => {
-  //   storeJwtTokenAtRoot(token)
-  // }, [token]);
+  console.log('resetCode:', resetCode[1])
 
-  const authenticateLogIn = (e) => {
+  const sendNewPassword = (e) => {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
+
+
+
     axios
-      .post('http://localhost:1337/auth/local', {
-        identifier: form.elements.email.value,
-        password: form.elements.password.value
+      .post('http://localhost:1337/auth/reset-password', {
+        code: resetCode,
+        password: form.elements.newpassword.value,
+        passwordConfirmation: form.elements.confirm.value
       })
       .then(response => {
         // Handle success.
-        console.log('Well done!');
-        console.log('User profile', response.data.user);
-        console.log('User token', response.data.jwt);
-        setToken(response.data.jwt);
+        console.log('Your user\'s password has been changed.');
       })
       .catch(error => {
         // Handle error.
-        setLogInError(true);
-        // form.elements.email.value = "";
-        form.elements.password.value = "";
         console.log('An error occurred:', error);
       });
   }
@@ -122,24 +118,25 @@ export default function PasswordReset() {
 
   return (
     <SForm_Container>
-      <SForm onSubmit={authenticateLogIn}>
+      <SForm onSubmit={sendNewPassword}>
         <Title>Amy Rodriguez Jewellery</Title>
-        <SInput type="email" name="email" placeholder="email"
+        <SInput type="password" name="newpassword" placeholder="new password"
           logInError={logInError}
-          onKeyDown={_ => logInError ? setLogInError(false) : null}
         />
-        <SInput type="password" name="password" placeholder="password"
+        <SInput type="password" name="confirm" placeholder="confirm password"
           logInError={logInError}
         />
         <SLoginInfo>
-          <SForgot>Forgot Password?</SForgot>
+          <SForgot>
+            <Link to="/">Back to Login</Link>
+          </SForgot>
           <SError
             logInError={logInError}
           >
-            Incorrect password or email.
+            Incorrect email.
           </SError>
         </SLoginInfo>
-        <SSubmit type="submit" value="Log In" />
+        <SSubmit type="submit" value="Reset" />
       </SForm>
     </SForm_Container>
   );

@@ -16,7 +16,8 @@ const SSlideLinkContainer = styled.div`
 `
 
 const SSlideLink = styled.div`
-
+  color: black;
+  text-decoration: none;
 `
 
 

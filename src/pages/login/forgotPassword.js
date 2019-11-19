@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 
@@ -23,21 +23,36 @@ const SForm = styled.form`
   flex-direction: column;
 `
 
+const SInput_Container = styled.div`
+  position: relative;
+`
+
 const SInput = styled.input`
   width: 400px;
-  height: 50px;
+  height: 45px;
   margin-bottom: 10px;
-  border: ${props => props.logInError ? '1px solid #D93025' : '1px solid #DADCE0'};
+  border: ${props => !props.emailError ? props.emailSuccess ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
   border-radius: 4px;
   padding-left: 10px;
   outline: none;
   font-family: 'Roboto', sans-serif;
-  transition: ${props => props.logInError ? 'border .2s' : 'border .1s'};
-  /* transition: border .2s; */
+  transition: ${props => props.emailError ? 'border .2s' : 'border .1s'};
 
   :focus {
     border: 1px solid #287AE6;
   }
+`
+
+const SInput_Info = styled.p`
+  position: absolute;
+  top: -7px;
+  left: 20px;
+  background: white;
+  padding: 0 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 11px;
+  color: grey;
+  /* border: 1px solid black; */
 `
 
 const SLoginInfo = styled.div`
@@ -52,13 +67,21 @@ const SForgot = styled.div`
   color: #287AE6;
 `
 
-
 const SError = styled.p`
-  opacity: ${props => props.logInError ? 1 : 0};
+  opacity: ${props => props.emailError ? 1 : 0};
   align-self: flex-end;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   color: #D93025;
+  transition: opacity .2s;
+`
+
+const SSuccess = styled.p`
+  opacity: ${props => props.emailSuccess ? 1 : 0};
+  align-self: flex-end;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  color: #12C2AB;
   transition: opacity .2s;
 `
 
@@ -86,36 +109,29 @@ const SSubmit = styled.input`
 
 
 
-export default function Login({ storeJwtTokenAtRoot }) {
+export default function ForgotPassword() {
 
-  const [token, setToken] = useState(null);
-  const [logInError, setLogInError] = useState(false);
-  const [email, setEmail] = useState();
+  const [emailError, setEmailError] = useState(false);
+  const [success, setSuccess] = useState(false);
 
 
-  useEffect(_ => {
-    storeJwtTokenAtRoot(token)
-  }, [token]);
-
-  const authenticateLogIn = (e) => {
+  const sendPasswordReset = (e) => {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
     axios
-      .post('http://localhost:1337/auth/local', {
-        identifier: form.elements.email.value,
-        password: form.elements.password.value
+      .post('http://localhost:1337/auth/forgot-password', {
+        email: form.elements.email.value,
+        url:
+          'http://localhost:3000/reset-password',
       })
       .then(response => {
         // Handle success.
-        console.log('Well done!');
-        console.log('User profile', response.data.user);
-        console.log('User token', response.data.jwt);
-        setToken(response.data.jwt);
+        setSuccess(true);
+        console.log('Your user received an email');
       })
       .catch(error => {
         // Handle error.
-        setLogInError(true);
-        form.elements.password.value = "";
+        setEmailError(true);
         console.log('An error occurred:', error);
       });
   }
@@ -124,34 +140,33 @@ export default function Login({ storeJwtTokenAtRoot }) {
 
   return (
     <SForm_Container>
-      <SForm onSubmit={authenticateLogIn}>
+      <SForm onSubmit={sendPasswordReset}>
         <Title>Amy Rodriguez Jewellery</Title>
-        <SInput type="email" name="email" placeholder="email"
-          onChange={e => setEmail(e.target.value) }
-          onKeyDown={_ => logInError ? setLogInError(false) : null }
-          logInError={logInError}
-        />
-        <SInput type="password" name="password" placeholder="password"
-          logInError={logInError}
-        />
+        <SInput_Container>
+          <SInput_Info>Enter email for password recovery</SInput_Info>
+          <SInput type="email" name="email"
+            defaultValue={useLocation().state.email}
+            onKeyDown={_ => emailError ? setEmailError(false) : null }
+            emailError={emailError}
+            emailSuccess={success}
+          />
+        </SInput_Container>
         <SLoginInfo>
           <SForgot>
-            <Link to={{
-              pathname: "/forgot-password",
-              state: {
-                email: email
-              }
-            }}>
-              Forgot Password?
-            </Link>
+            <Link to="/">Go Back</Link>
           </SForgot>
           <SError
-            logInError={logInError}
+            emailError={emailError}
           >
-            Incorrect password or email.
+            Incorrect email.
           </SError>
+          <SSuccess
+            emailSuccess={success}
+          >
+            Email sent.
+          </SSuccess>
         </SLoginInfo>
-        <SSubmit type="submit" value="Log In" />
+        <SSubmit type="submit" value="Send" />
       </SForm>
     </SForm_Container>
   );
