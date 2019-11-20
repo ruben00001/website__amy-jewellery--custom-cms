@@ -3,9 +3,7 @@ import styled from 'styled-components';
 
 
 const SImage = styled.img`
-  width: 40%;
-  opacity: ${props => props.animateIn ? 1 : 0};
-  transition: opacity .2s;
+
 `;
 
 

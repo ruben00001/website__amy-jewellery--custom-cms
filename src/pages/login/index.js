@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 
@@ -21,11 +21,11 @@ const Title = styled.h1`
 const SForm = styled.form`
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* justify-content: center;
   height: 500px;
   padding: 0 40px;
   border: 1px solid #DADCE0;
-  border-radius: 8px;
+  border-radius: 8px; */
 `
 
 const SInput = styled.input`
@@ -91,12 +91,13 @@ const SSubmit = styled.input`
 
 
 
-export default function Login({ storeJwtTokenAtRoot }) {
+export default function Login({ storeJwtTokenAtRoot }, props) {
 
   const [token, setToken] = useState(null);
   const [logInError, setLogInError] = useState(false);
   const [email, setEmail] = useState();
 
+  const history = useHistory();
 
   useEffect(_ => {
     storeJwtTokenAtRoot(token)
@@ -112,10 +113,12 @@ export default function Login({ storeJwtTokenAtRoot }) {
       })
       .then(response => {
         // Handle success.
-        console.log('Well done!');
-        console.log('User profile', response.data.user);
-        console.log('User token', response.data.jwt);
+        console.log('Well done...you logged in!');
         setToken(response.data.jwt);
+        setTimeout(() => {
+          history.push("/portfolio_slide_0")
+        }, 800);
+
       })
       .catch(error => {
         // Handle error.

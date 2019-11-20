@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
+import Draggable from 'react-draggable';
 import ImageComp from './imagecomp';
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
@@ -13,10 +14,14 @@ const SPortfolio = styled.div`
   /* border: 3px solid blue; */
 `
 
-const SImage_Container = styled.div`
-  /* height: 100%; */
+const SImages_Container = styled.div`
   flex: auto;
-  /* border: 10px solid red; */
+`
+
+const SImage_Container = styled.div`
+  display: inline-block;
+  cursor: grab;
+  width: 40%;
 `
 
 export default function Portfolio({ images, page, preloadedImages, updatePreloadedImages }) {
@@ -127,24 +132,53 @@ export default function Portfolio({ images, page, preloadedImages, updatePreload
     //   });
   }
 
-  // CSS
+  useEffect(_ => {
+    const dragImg = new Image(0, 0);
+    dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  }, [])
+
+  const box = {
+    width: '300px',
+    // cursor: 'grab',
+    pointerEvents: 'none'
+  }
+
+  const handleDragImg = e => {
+    console.log('e:', e.dataTransfer)
+    const dragImg = new Image(0, 0);
+    dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(dragImg, 0, 0);
+  }
+
 
   return (
     <SPortfolio>
       <Navbar />
       {/* <h1 onClick={_ => autenticate()}>Click to test</h1>
         <h1 onClick={_ => post()}>Click to test 2</h1> */}
-      <SImage_Container
+      <SImages_Container
         onClick={_ => { if (imgNum < images[page].image.length) showNextImage() }}
       >
         {images[page] &&
-          <ImageComp
-            src={images[page].image[0].url}
-            num={0}
-          />
+          <Draggable
+            onStop={e => console.log('e:', e.target.getBoundingClientRect().x)}
+          >
+            {/* <div style={box} /> */}
+            <SImage_Container
+              
+            >
+              <img style={box} 
+                src="https://images.unsplash.com/photo-1574258496635-6b0acc96262d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=600&q=60"
+              />
+              {/* <ImageComp
+                src={images[page].image[0].url}
+                num={0}
+              /> */}
+            </SImage_Container>
+          </Draggable>
         }
         {imgComponents}
-      </SImage_Container>
+      </SImages_Container>
       <ImageNav previousPage={pg.previous} nextPage={pg.next} />
     </SPortfolio>
   );

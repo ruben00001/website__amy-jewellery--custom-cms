@@ -11,12 +11,27 @@ import Shop from './pages/shop';
 
 function App() {
 
+  const [images, setImages] = useState([]);
+  const [preloadedImages, setPreLoadedImages] = useState([]);
   const [jwtToken, setJwtToken] = useState(null);
+
+  useEffect(_ => { // PULL DATA FROM STRAPI CMS
+    const fetchImages = async () => {
+      const result = await axios('http://localhost:1337/images');
+
+      setImages(result.data);
+    }
+
+    fetchImages();
+  }, []);
 
   const storeJwtTokenAtRoot = (key) => {
     setJwtToken(key)
   }
 
+  const updatePreloadedImages = (url) => {
+    setPreLoadedImages(preloadedImages => preloadedImages.concat(url));
+  }
 
   return (
     <Router>
@@ -25,12 +40,25 @@ function App() {
         <Route exact path="/" render={_ =>
           <Login storeJwtTokenAtRoot={storeJwtTokenAtRoot} />
         } />
-        <Route exact path="/forgot-password" render={_ =>
+        <Route path="/forgot-password" render={_ =>
           <ForgotPassword />
         } />
-        <Route exact path="/reset-password" render={_ =>
+        <Route path="/reset-password" render={_ =>
           <ResetPassword />
         } />
+        {
+          // jwtToken &&
+          images.map((portfolio_slide, i) =>
+            <Route key={i} path={`/portfolio_slide_${i}`} render={_ =>
+              <Portfolio
+                images={images}
+                page={i}
+                preloadedImages={preloadedImages}
+                updatePreloadedImages={updatePreloadedImages}
+              />}
+            />
+          )
+        }
 
         {/* {
           images.slice(1).map((portfolio_slide, i) =>
