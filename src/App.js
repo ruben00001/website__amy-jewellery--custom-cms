@@ -11,19 +11,8 @@ import Shop from './pages/shop';
 
 function App() {
 
-  const [images, setImages] = useState([]);
   const [preloadedImages, setPreLoadedImages] = useState([]);
   const [jwtToken, setJwtToken] = useState(null);
-
-  useEffect(_ => { // PULL DATA FROM STRAPI CMS
-    const fetchImages = async () => {
-      const result = await axios('http://localhost:1337/images');
-
-      setImages(result.data);
-    }
-
-    fetchImages();
-  }, []);
 
   const storeJwtTokenAtRoot = (key) => {
     setJwtToken(key)
@@ -46,7 +35,11 @@ function App() {
         <Route path="/reset-password" render={_ =>
           <ResetPassword />
         } />
-        {
+        <Route path="/portfolio" render={_ =>
+          <Portfolio />
+        } />
+        
+        {/* {
           // jwtToken &&
           images.map((portfolio_slide, i) =>
             <Route key={i} path={`/portfolio_slide_${i}`} render={_ =>
@@ -58,7 +51,7 @@ function App() {
               />}
             />
           )
-        }
+        } */}
 
         {/* {
           images.slice(1).map((portfolio_slide, i) =>
