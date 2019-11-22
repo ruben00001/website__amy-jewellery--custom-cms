@@ -54,78 +54,41 @@ export default function Portfolio({ images, page, preloadedImages, updatePreload
   }, []);
 
 
-  const [imgs, setImgs] = useState();
-
-  const submitUpload = (e) => {
+  const submitUpload = e => {
     e.preventDefault();
 
-    const formData = new FormData();
+    const formData = new FormData(e.target);
 
-    // formData.append('image', e.target.elements.files.value)
-    // formData.append('files', {
-    //   uri: e.target.elements.files,
-    //   type: 'multipart/form-data'
-    // })
-
-    // axios.post("http://localhost:1337/upload", { data: formData })
-    //   .then(res => {
-    //     console.log(res);
-    //   })
-    //   .catch(err => {
-    //     console.log(err);
-    //   });
-
-    formData.append('files', imgs[0])
-
-    axios
-      .post(`http://localhost:1337/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+    axios.post("http://localhost:1337/images", {})
       .then(res => {
         console.log(res);
+        console.log(res.data);
+
+        formData.append('refId', res.data.id);
+
+        axios.post(`http://localhost:1337/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+          .then(res => {
+            console.log(res);
+          })
+          .catch(err => {
+            console.log(err);
+          });
       })
       .catch(err => {
         console.log(err);
       });
-
-
-    console.log('e.target.elements.files:', imgs[0])
-
-
-    // const request = new XMLHttpRequest();
-
-    // request.open('POST', '/upload');
-
-    // request.send(new FormData(formElement));
-
-
-
-    // request.open('POST', 'http://localhost:1337');
-
-    // request.send(new FormData(e));
-
-
-    // axios.post({
-    //   method: 'post',
-    //   url: 'http://localhost:1337/upload',
-    //   data: formData,
-    //   headers: { 'Content-Type': 'multipart/form-data' }
-    // })
-
   }
 
-  const onImageChange = e => {
-    console.log(e.target.files);
-    setImgs(e.target.files);
-  }
+
 
 
   return (
     <form id='form' onSubmit={e => submitUpload(e)}>
-      <input type="file" name="files" onChange={e => onImageChange(e)} />
-      {/* <input type="text" name="ref" value="slide" />
-      <input type="text" name="refId" value="5dd5cbfecc6e1a0ee4066b29" />
-      <input type="text" name="field" value="cover" /> */}
+      <input type="file" name="files" />
+      <input type="text" name="ref" value="image" />
+      <input type="text" name="field" value="image" />
       <input type="submit" value="Submit" />
     </form>
     // <div>
