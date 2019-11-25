@@ -27,83 +27,211 @@ const SImage_Container = styled.div`
   width: 40%;
 `
 
-export default function Portfolio({ images, page, preloadedImages, updatePreloadedImages }) {
+const SSlide_Container = styled.div`
+  position: relative;
+  /* height: 100vh; */
+  /* overflow: hidden; */
+  width: 90%;
+  height: 70vh;
+  margin: 30px auto;
+  border: 2px solid black;
+`
+
+export default function Portfolio() {
 
   let { path, url } = useRouteMatch();
 
+  const [toggle, set] = useState(false);
   const [slideData, setSlideData] = useState([]);
+  const [imgElements, setImgElements] = useState([]);
+  const [windowWidth, setWindowWidth] = useState(null);
 
-  useEffect(_ => { // PULL DATA FROM STRAPI CMS
-    // axios.get('http://localhost:1337/slides')
-    //   .then(response => console.log(response.data))
+  useEffect(_ => { // PULL DATA FROM STRAPI CMS AND COLLATE
 
-    // axios.get('http://localhost:1337/images')
-    //   .then(response => console.log(response.data))
+    let slides;
 
+    axios.get('http://localhost:1337/slides')
+      .then(response => {
 
+        slides = response.data.map(slide => {
+          return {
+            id: slide.id,
+            num: slide.num,
+            imgs: slide.images.map(image => {
+              return {
+                id: image.id,
+                url: image.image.url
+              }
+            })
+          }
+        });
 
-    // const fetchImages = async () => {
-    //   const resultA = await axios('http://localhost:1337/slides');
-    //   const resultB = await axios('http://localhost:1337/slides');
+        axios.get('http://localhost:1337/images')
+          .then(response => {
+            response.data.forEach(image => {
+              const imgWidths = image.widths.map(imgWidth => {
+                return {
+                  screen: imgWidth.screenwidth,
+                  width: imgWidth.width
+                }
+              });
+              const imgPositions = image.positions.map(imgPos => {
+                return {
+                  screen: imgPos.screenwidth,
+                  x: imgPos.x,
+                  y: imgPos.y
+                }
+              });
 
-    //   console.log('result.data:', result.data);
-    //   // const imgURLs = result.data.map(page => )
-    // }
-
-    // fetchImages();
-  }, []);
-
-
-  const submitUpload = e => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-
-    axios.post("http://localhost:1337/images", {})
-      .then(res => {
-        console.log(res);
-        console.log(res.data);
-
-        formData.append('refId', res.data.id);
-
-        axios.post(`http://localhost:1337/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-          .then(res => {
-            console.log(res);
+              for (let i = 0; i < slides.length; i++) {
+                for (let j = 0; j < slides[i].imgs.length; j++) {
+                  if (image.id === slides[i].imgs[j].id) {
+                    slides[i].imgs[j].widths = imgWidths;
+                    slides[i].imgs[j].positions = imgPositions;
+                    break;
+                  }
+                }
+              }
+            });
+            console.log('slides:', slides)
+            setSlideData(slides);
           })
-          .catch(err => {
-            console.log(err);
-          });
       })
-      .catch(err => {
-        console.log(err);
+  }, [toggle]);
+
+  useEffect(_ => { // CREATE IMGS WITH CONDITIONAL STYLES
+    if (slideData[0]) {
+      const slideImgs = [];
+
+      const setMqWidthIndex = (image, property) => {
+        const widths = image[property].map(size =>
+          size.screen
+        );
+        for (let i = 0; i < widths.length; i++) {
+          if (windowWidth >= widths[i] || !widths[i + 1]) return i // *** check this works
+        }
+      }
+
+      slideData.forEach(slide => {
+        const imgs = slide.imgs.map((image, j) => {
+
+          const mqWidthsWidthIndex = setMqWidthIndex(image, 'widths');
+          const mqPositionsWidthIndex = setMqWidthIndex(image, 'positions');
+
+          return <img src={`http://localhost:1337${image.url}`}
+            style={windowWidth ?
+              {
+                position: 'absolute',
+                width: `${image.widths[0] ? image.widths[mqWidthsWidthIndex].width : 30}%`,
+                top: image.positions[0] ? image.positions[mqPositionsWidthIndex].y : 30,
+                left: image.positions[0] ? image.positions[mqPositionsWidthIndex].x : 30
+              } :
+              {
+                position: 'absolute',
+                width: `${image.widths[0] ? image.widths[0].width : 30}%`,
+                top: image.positions[0] ? image.positions[0].y : 30,
+                left: image.positions[0] ? image.positions[0].x : 30
+              }
+            }
+            key={j}
+          ></img>
+        });
+        slideImgs.push(imgs);
       });
+      setImgElements(slideImgs);
+    }
+  }, [slideData]);
+
+
+  // const submitUpload = e => {
+  //   e.preventDefault();
+
+  //   const formData = new FormData(e.target);
+  //   formData.append('ref', 'image');
+  //   formData.append('field', 'image');
+
+  //   axios.post("http://localhost:1337/images", {slide: '5dd5cbfecc6e1a0ee4066b29'})
+  //     .then(res => {
+  //       console.log(res);
+
+  //       formData.append('refId', res.data.id);
+
+  //       axios.post(`http://localhost:1337/upload`, formData, {
+  //         headers: { 'Content-Type': 'multipart/form-data' },
+  //       })
+  //         .then(res => {
+  //           console.log(res);
+  //         })
+  //         .catch(err => {
+  //           console.log(err);
+  //         });
+  //     })
+  //     .catch(err => {
+  //       console.log(err);
+  //     });
+  // }
+
+  const addPage = () => {
+    axios.post("http://localhost:1337/slides", { num: slideData.length + 1 })
+      .then(res => {
+        // console.log(res.data);
+        set(!toggle);
+      })
   }
 
 
-
-
   return (
-    <form id='form' onSubmit={e => submitUpload(e)}>
-      <input type="file" name="files" />
-      <input type="text" name="ref" value="image" />
-      <input type="text" name="field" value="image" />
-      <input type="submit" value="Submit" />
-    </form>
-    // <div>
-    //   <Switch>
-    //     <Route exact path={path}>
-    //       <h2>Portfolio Home</h2>
-    //       <div>
-    //         <Link to={`${url}/1`}>Slide 1</Link>
-    //       </div>
-    //     </Route>
-    //     <Route path={`${path}/:slideId`}>
-    //       <Slide />
-    //     </Route>
-    //   </Switch>
-    // </div>
+    <>
+      {/* <form id='form' onSubmit={e => submitUpload(e)}>
+     <input type="file" name="files" />
+     <input type="submit" value="Submit" />
+    </form> */}
+
+      <Switch>
+        <Route exact path={path}>
+          <div>
+            <h2>Portfolio Home</h2>
+            {
+              slideData[0] &&
+              <SSlide_Container>
+                {/* {imgElements[2]} */}
+              </SSlide_Container>
+              // imgElements.map((slide, i) => 
+              //   <SSlide_Container>
+              //     {slide[i]}
+              //   </SSlide_Container>
+              // )
+              // <img style={{ position: 'absolute', width: `${slideData[0].imgs[0].widths[0].width}%` }} src={`http://localhost:1337${slideData[0].imgs[0].url}`}></img>
+              // slideData[0].imgs.map(img => 
+              //   <img style={{position: 'absolute', width: img.widths[0].width, top: img.positions[0].y, left: img.positions[0].x}} src={`http://localhost:1337${img.url}`}></img>
+              // ) 
+            }
+            <div>
+              {
+                imgElements.map((slide, i) =>
+                  <Link to={`${url}/${i}`}>Slide {i + 1}</Link>
+                )
+              }
+              {/* <Link to={`${url}/1`}>Slide 1</Link> */}
+            </div>
+            <h3 onClick={_ => addPage()}>Add Page</h3>
+          </div>
+
+        </Route>
+        {imgElements[0] &&
+          <Route path={`${path}/:slideId`}>
+            <Slide slideData={slideData} imgElements={imgElements} />
+          </Route>
+          // imgElements.map((slide, i) => {
+          //   console.log('slide:', slide)
+          //   return <Route path={`${path}/:slideId`}>
+          //     <Slide imgElements={slide} page={i} />
+          //   </Route>
+          // })
+        }
+
+      </Switch>
+    </>
   );
 
   // const [imgURLs, setImgURLs] = useState([]);

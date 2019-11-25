@@ -8,11 +8,12 @@ import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 
 const SPortfolio = styled.div`
+  position: relative;
   height: 100vh;
-  /* overflow: hidden; */
   display: flex;
   flex-flow: column;
-  /* border: 3px solid blue; */
+  overflow: hidden;
+  border: 3px solid blue;
 `
 
 const SImages_Container = styled.div`
@@ -25,14 +26,37 @@ const SImage_Container = styled.div`
   width: 40%;
 `
 
-export default function Slide() {
+export default function Slide({ imgElements }) {
+
+  const [pg, setPg] = useState({});
 
   const { slideId } = useParams();
+  console.log('slideId:', slideId)
+
+  useEffect(_ => {
+    let page = { previous: null, next: null };
+
+    slideId === 0 ?
+      page.previous = imgElements.length - 1 :
+      page.previous = Number(slideId - 1);
+
+    slideId === imgElements.length - 1 ?
+      page.next = 0 :
+      page.next = Number(slideId + 1);
+
+    setPg(page);
+  }, [])
+
+  console.log('imgElements:', imgElements)
 
   return (
-    <div>
-      <p>SLIDE {slideId}</p>
-    </div>
+    <SPortfolio>
+      <Navbar />
+      <SImages_Container>
+        {imgElements[slideId]}
+      </SImages_Container>
+      <ImageNav previousPage={pg.previous} nextPage={pg.next} />
+    </SPortfolio>
   )
 }
 

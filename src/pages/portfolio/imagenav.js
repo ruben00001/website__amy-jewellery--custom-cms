@@ -23,18 +23,20 @@ const SSlideLink = styled.div`
 
 const ImageNav = memo(({ previousPage, nextPage }) => {
 
+  console.log('nextPage:', nextPage)
+
   return (
     <SSlideLinkContainer>
       <SSlideLink>
         <Link
-          to={previousPage === 0 ? "/" : `/portfolio_slide_${previousPage}`}
+          to={`/portfolio/${previousPage}`}
         >
           previous page
         </Link>
       </SSlideLink>
       <SSlideLink>
         <Link
-          to={nextPage === 0 ? "/" : `/portfolio_slide_${nextPage}`}
+          to={`/portfolio/${nextPage}`}
         >
           next page
         </Link>
