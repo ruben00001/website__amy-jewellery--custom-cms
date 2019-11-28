@@ -4,7 +4,7 @@ import axios from 'axios';
 import styled from 'styled-components';
 
 
-const SForm_Container = styled.div`
+const SFormContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -131,7 +131,7 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
 
 
   return (
-    <SForm_Container>
+    <SFormContainer>
       <SForm onSubmit={authenticateLogIn}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="email" name="email" placeholder="email"
@@ -161,6 +161,6 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
         </SLoginInfo>
         <SSubmit type="submit" value="Log In" />
       </SForm>
-    </SForm_Container>
+    </SFormContainer>
   );
 }

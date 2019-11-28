@@ -1,11 +1,12 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 
 const SSlideLinkContainer = styled.div`
-  /* position: fixed;
-  bottom: 20px; */
+  position: fixed;
+  bottom: 10px;
+  z-index: 1;
   height: 30px;
   display: flex;
   justify-content: space-around;
@@ -22,8 +23,6 @@ const SSlideLink = styled.div`
 
 
 const ImageNav = memo(({ previousPage, nextPage }) => {
-
-  console.log('nextPage:', nextPage)
 
   return (
     <SSlideLinkContainer>

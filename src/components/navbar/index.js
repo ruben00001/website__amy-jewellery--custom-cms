@@ -1,9 +1,13 @@
-import React, { memo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 
 
 const SNavbar = styled.div`
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   width: 98%;
@@ -22,13 +26,13 @@ const Navbar = memo(() => {
   return (
     <SNavbar>
       <SPageLink className='hello'>
-        <Link to="/">amy rodriguez</Link>
+        amy rodriguez
       </SPageLink>
       <SPageLink>
-        <Link to="/shop">shop</Link>
+        shop
       </SPageLink>
       <SPageLink>
-        <Link to="/contact">contact</Link>
+        contact
       </SPageLink>
     </SNavbar>
   )
