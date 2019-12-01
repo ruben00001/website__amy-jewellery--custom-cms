@@ -87,7 +87,7 @@ export default function Portfolio() {
                 }
               }
             });
-            console.log('slides:', slides);
+            // console.log('slides:', slides);
             setSlideData(slides);
           })
       })

@@ -38,10 +38,8 @@ function Slide({ slideData, size }) {
   const [pg, setPg] = useState({});
   const [imgsRND, setImgsRND] = useState([]);
   const [state, setState] = useState({ x: 200, y: 200, w: '30%' });
-  const [imgsValues, setImgsValues] = useState([]);
 
   const pgCurrent = Number(useParams().slideId);
-  console.log('slideData[pgCurrent]:', slideData[pgCurrent])
 
   useEffect(_ => { // SET UP WINDOW WIDTH LISTENER
     function updateWidth() {
@@ -49,19 +47,18 @@ function Slide({ slideData, size }) {
 
       setWindowWidth(window.innerWidth);
     }
-
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // useEffect(_ => {
-  //   if (windowWidth) {
-  //     setState({ ...state, x: 700, y: 100 });
-  //     console.log('====================================');
-  //     console.log('updated image state');
-  //     console.log('====================================');
-  //   }
-  // }, [windowWidth])
+  useEffect(_ => {
+    if (windowWidth) {
+      setState({ ...state, x: 700, y: 100 });
+      console.log('====================================');
+      console.log('updated image state');
+      console.log('====================================');
+    }
+  }, [windowWidth])
   // useEffect(_ => {
   //   setState({...state, x: 700, y: 100})
   //   setWindowWidth(size.width);
@@ -77,122 +74,96 @@ function Slide({ slideData, size }) {
   //   setImgsRND(imgsRNDarr);
   // }, [slideData])
 
-  // *********** TO DO: (i) change px to percent for position when pushing data to Strapi
+  useEffect(_ => { // CREATE IMGS ELEMENTS & STORE NEW WIDTH AND POS VALUES
 
-  useEffect(_ => {
-    const getIndexOfPropertyForScreenWidth = (image, property) => {
+    console.log('slideData[pgCurrent]:', slideData[pgCurrent])
+
+    const setMqPropertyIndex = (image, property, screenWidth) => {
       const values = image[property].map(size => size.screen);
       const valuesSorted = image[property].map(size => size.screen).sort((a, b) => b - a);
       for (let i = 0; i < valuesSorted.length; i++) {
-        if (windowWidth >= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
+        if (screenWidth >= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
       }
     }
 
-    slideData[pgCurrent].imgs.map(img => {
-      const position = img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')];
-      const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')];
+    const imgs = slideData[pgCurrent].imgs.map((image, i) => {
 
-      setImgsValues(imgsValues => [...imgsValues, { position: position, width: width }]);
+      const widthsScreenWidths = image.widths.map(width => width.screen);
+      const positionScreenWidths = image.positions.map(position => position.screen);
+
+      const mqWidthsIndex = setMqPropertyIndex(image, 'widths', window.innerWidth);
+      const mqPositionsIndex = setMqPropertyIndex(image, 'positions', window.innerWidth);
+
+
+
+      return (
+        <Rnd
+          lockAspectRatio={true}
+          // style={{border: size.width === 1680 ? '1px solid red' : '1px solid green' }}
+          onDragStop={(e, d) => {
+
+            let positionId = 0;
+            for (let i = 0; i < positionScreenWidths.length; i++) {
+              if (window.innerWidth === positionScreenWidths[i]) positionId = image.positions[i].id
+            }
+
+            setNewImgPositions(newImgPositions => {
+              const arr = newImgPositions;
+              let containsPosition = false;
+              for (let i = 0; i < arr.length; i++) { // rewrite over existing value (not in Strapi) for image at this screensize
+                if (d.node.getAttribute('value') === arr[i].imgId && arr[i].screenWidth === window.innerWidth) {
+                  arr[i].x = d.x / window.innerWidth * 100;
+                  arr[i].y = d.y / window.innerHeight * 100;
+                  containsPosition = true;
+                  break;
+                }
+              }
+              return containsPosition ? arr : [...newImgPositions,
+              { imgId: image.id, screenWidth: window.innerWidth, x: d.x / window.innerWidth * 100, y: d.y / window.innerHeight * 100, positionId: positionId }]
+            })
+          }}
+          onResizeStop={(e, d, ref) => {
+
+            let widthId = 0;
+            for (let i = 0; i < widthsScreenWidths.length; i++) {
+              if (widthsScreenWidths[i] === window.innerWidth) widthId = image.widths[i].id
+            }
+
+            setNewImgWidths(newImgWidths => {
+              const arr = newImgWidths;
+              let containsWidth = false;
+              for (let i = 0; i < arr.length; i++) {
+                if (ref.getAttribute('value') === arr[i].imgId && arr[i].screenWidth === window.innerWidth) {
+                  arr[i].width = ref.style.width.slice(0, -1);
+                  containsWidth = true;
+                  break;
+                }
+              }
+              return containsWidth ? arr : [...newImgWidths,
+              { imgId: image.id, screenWidth: window.innerWidth, width: ref.style.width.slice(0, -1), widthId: widthId }]
+            })
+          }}
+          // size={{ width: `${image.widths[mqWidthsIndex].width}%` }}
+          // position={{
+          //   x: imgsRND[i] ? imgsRND[i].x : `${window.innerWidth * image.positions[mqPositionsIndex].x / 100}`,
+          //   y: imgsRND[i] ? imgsRND[i].y : `${window.innerHeight * image.positions[mqPositionsIndex].y / 100}`
+          // }}
+          default={{
+            x: `${window.innerWidth * image.positions[mqPositionsIndex].x / 100}`,
+            y: `${window.innerHeight * image.positions[mqPositionsIndex].y / 100}`,
+            width: `${image.widths[mqWidthsIndex].width}%`,
+          }}
+          value={image.id}
+          key={i}
+        >
+          <img style={{ pointerEvents: 'none', width: '100%' }} src={`http://localhost:1337${image.url}`} />
+        </Rnd>
+      )
     });
-  }, [windowWidth]);
 
+    setImgElements(imgs);
 
-  useEffect(_ => { // CREATE IMGS ELEMENTS & STORE NEW WIDTH AND POS VALUES
-    if (imgsValues[0]) {
-      const imgs = slideData[pgCurrent].imgs.map((img, i) => {
-
-        const widthsScreenWidths = img.widths.map(width => width.screen);
-        const positionScreenWidths = img.positions.map(position => position.screen);
-
-        // const mqWidthsIndex = getIndexOfPropertyForScreenWidth(image, 'widths', window.innerWidth);
-        // const mqPositionsIndex = getIndexOfPropertyForScreenWidth(image, 'positions', window.innerWidth);
-        console.log('imgsValues[i]:', imgsValues);
-        const percentToPx = (percent, dimension) => {
-          return dimension === 'x' ?
-            (percent * window.innerWidth) / 100 :
-            (percent * window.innerHeight) / 100;
-        }
-
-        return (
-          // <></>
-          <ImageComp
-            x={percentToPx(imgsValues[i].position.x, 'x')}
-            y={percentToPx(imgsValues[i].position.y, 'y')}
-            w={`${imgsValues[i].width.width}%`}
-            src={`http://localhost:1337${img.url}`}
-            percentToPx={percentToPx}
-            key={i}
-          />
-          // <Rnd
-          //   lockAspectRatio={true}
-          //   // style={{border: size.width === 1680 ? '1px solid red' : '1px solid green' }}
-          //   onDragStop={(e, d) => {
-
-          //     let positionId = 0; // indicate if property at screenwidth exists in Strapi to inform to update or post
-          //     for (let i = 0; i < positionScreenWidths.length; i++) {
-          //       if (window.innerWidth === positionScreenWidths[i]) positionId = image.positions[i].id
-          //     }
-
-          //     setNewImgPositions(newImgPositions => {
-          //       const arr = newImgPositions;
-          //       let containsPosition = false;
-          //       for (let i = 0; i < arr.length; i++) { // rewrite over existing value (not in Strapi) for image at this screensize
-          //         if (d.node.getAttribute('value') === arr[i].imgId && arr[i].screenWidth === window.innerWidth) {
-          //           arr[i].x = d.x / window.innerWidth * 100;
-          //           arr[i].y = d.y / window.innerHeight * 100;
-          //           containsPosition = true;
-          //           break;
-          //         }
-          //       }
-          //       return containsPosition ? arr : [...newImgPositions,
-          //       { imgId: image.id, screenWidth: window.innerWidth, x: d.x / window.innerWidth * 100, y: d.y / window.innerHeight * 100, positionId: positionId }]
-          //     })
-          //   }}
-          //   onResizeStop={(e, d, ref) => {
-
-          //     let widthId = 0;
-          //     for (let i = 0; i < widthsScreenWidths.length; i++) {
-          //       if (widthsScreenWidths[i] === window.innerWidth) widthId = image.widths[i].id
-          //     }
-
-          //     setNewImgWidths(newImgWidths => {
-          //       const arr = newImgWidths;
-          //       let containsWidth = false;
-          //       for (let i = 0; i < arr.length; i++) {
-          //         if (ref.getAttribute('value') === arr[i].imgId && arr[i].screenWidth === window.innerWidth) {
-          //           arr[i].width = ref.style.width.slice(0, -1);
-          //           containsWidth = true;
-          //           break;
-          //         }
-          //       }
-          //       return containsWidth ? arr : [...newImgWidths,
-          //       { imgId: image.id, screenWidth: window.innerWidth, width: ref.style.width.slice(0, -1), widthId: widthId }]
-          //     })
-          //   }}
-          //   // size={{ width: `${image.widths[mqWidthsIndex].width}%` }}
-          //   // position={{
-          //   //   x: imgsRND[i] ? imgsRND[i].x : `${window.innerWidth * image.positions[mqPositionsIndex].x / 100}`,
-          //   //   y: imgsRND[i] ? imgsRND[i].y : `${window.innerHeight * image.positions[mqPositionsIndex].y / 100}`
-          //   // }}
-          //   default={{
-          //     x: `${window.innerWidth * image.positions[mqPositionsIndex].x / 100}`,
-          //     y: `${window.innerHeight * image.positions[mqPositionsIndex].y / 100}`,
-          //     width: `${image.widths[mqWidthsIndex].width}%`,
-          //   }}
-          //   value={image.id}
-          //   key={i}
-          // >
-          //   <img style={{ pointerEvents: 'none', width: '100%' }} src={`http://localhost:1337${image.url}`} />
-          // </Rnd>
-        )
-      });
-
-      setImgElements(imgs);
-    }
-
-
-
-  }, [imgsValues]);
+  }, [slideData]);
 
   useEffect(_ => { // SET VARIABLES FOR SLIDE NAVIGATION
     let page = { previous: null, next: null };
@@ -245,7 +216,7 @@ function Slide({ slideData, size }) {
 
   const test = () => {
     console.log('TEST');
-
+    
     setState({ x: 700, y: 100, w: '10%' })
   }
 
@@ -254,8 +225,8 @@ function Slide({ slideData, size }) {
       <Navbar />
       {/* <h1 style={{zIndex: 100}} onClick={_ => test()}>Test</h1> */}
       <SImages_Container>
-        {imgElements}
-        {/* <ImageComp defaultX={state.x} defaultY={state.y} defaultW={state.w} /> */}
+        {/* {imgElements} */}
+        <ImageComp defaultX={state.x} defaultY={state.y} defaultW={state.w} />
       </SImages_Container>
       {pg.next && // -> prevent unneccesary render
         <ImageNav previousPage={pg.previous} nextPage={pg.next} />
