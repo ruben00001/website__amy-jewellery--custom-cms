@@ -42,35 +42,37 @@ const SImage = styled.img`
 
 // export default ImageComp;
 
-export default function ImageComp({ x, y, w, src, percentToPx }) {
+export default function ImageComp({ x, y, w, src, percentToPx, updateImgValues }) {
 
   const [state, setState] = useState({ x: x, y: y, width: w });
-
-
-
-  console.log('state:', state)
 
   useEffect(_ => {
     setState({ x: x, y: y, width: w })
   }, [x, y, w])
 
-  // useEffect(_ => {
-  //   console.log('state.width:', state)
-  // }, [])
+  const pxToPercent = (num, dimension) => {
+    return dimension === 'x' ?
+      (num / window.innerWidth) * 100 :
+      (num / window.innerHeight) * 100;
+  }
 
   return (
     <Rnd
+      style={{border: '1px solid green'}}
       lockAspectRatio={true}
-      style={{ border: '2px solid green' }}
+      enableResizing={{ bottomLeft: true, bottomRight: true }}
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
-      onDragStop={(e, d) => { setState({ ...state, x: d.x, y: d.y }) }}
+      onDragStop={(e, d) => {
+        setState({ ...state, x: d.x, y: d.y });
+        updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'), Number(state.width.slice(0, -1)));
+      }}
       onResizeStop={(e, direction, ref, delta, position) => {
-        console.log('ref.style.width:', ref.style.width)
         setState({
           width: ref.style.width,
           ...position
-        })
+        });
+        updateImgValues(pxToPercent(state.x, 'x'), pxToPercent(state.y, 'y'), Number(ref.style.width.slice(0, -1)));
       }}
     >
       <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />

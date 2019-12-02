@@ -40,6 +40,10 @@ export default function Portfolio() {
 
   useEffect(_ => { // PULL DATA FROM STRAPI CMS AND COLLATE
 
+    console.log('====================================');
+    console.log('API CALL MADE');
+    console.log('====================================');
+
     let slides;
 
     axios.get('http://localhost:1337/slides')
@@ -158,14 +162,21 @@ export default function Portfolio() {
   //       console.log(err);
   //     });
   // }
+  const setToggle = () => {
+    console.log('TOGGLE');
+    
+    set(!toggle);
+  }
 
   const addPage = () => {
     axios.post("http://localhost:1337/slides", { num: slideData.length + 1 })
       .then(res => {
         // console.log(res.data);
-        set(!toggle);
+        setToggle();
       })
   }
+
+
 
 
   return (
@@ -215,7 +226,7 @@ export default function Portfolio() {
         </Route>
         {slideData[0] &&
           <Route path={`${path}/:slideId`}>
-            <Slide slideData={slideData} />
+            <Slide slideData={slideData} setToggle={setToggle} />
             {/* <Slide slideData={slideData} imgElements={<div>Hello</div>} /> */}
           </Route>
           // imgElements.map((slide, i) => {
