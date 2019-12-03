@@ -1,54 +1,45 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import styled from 'styled-components';
 
 
-const SImage = styled.img`
+const SInfo = styled.div`
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 10;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+`
 
-`;
+const SSelect = styled.select`
+  border: none;
+  margin-left: 10px;
+  cursor: inherit;
+`
 
-// class ImageComp extends React.Component {
-//   constructor() {
-//     super();
-//     this.state = {
-//       width: 200,
-//       height: 200,
-//       x: 10,
-//       y: 10
-//     };
-//   }
+export default function ImageComp({ x, y, w, numImgs, num, src, updateImgValues, updateImgNum }) {
 
-//   render() {
-//     return (
-//       <Rnd
-//         size={{ width: this.state.width, height: this.state.height }}
-//         position={{ x: this.state.x, y: this.state.y }}
-//         onDragStop={(e, d) => {
-//           this.setState({ x: d.x, y: d.y });
-//         }}
-//         onResizeStop={(e, direction, ref, delta, position) => {
-//           this.setState({
-//             width: ref.style.width,
-//             height: ref.style.height,
-//             ...position
-//           });
-//         }}
-//       >
-//         <img style={{ pointerEvents: 'none', width: '100%' }} src={'https://images.unsplash.com/photo-1574969970937-a90cdcbeea2e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=600&q=60'}></img>
-//       </Rnd>
-//     );
-//   }
-// }
-
-// export default ImageComp;
-
-export default function ImageComp({ x, y, w, src, percentToPx, updateImgValues }) {
-
-  const [state, setState] = useState({ x: x, y: y, width: w });
+  const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
+  const [options, setOptions] = useState([]);
+  const [imgNum, setImgNum] = useState(num);
 
   useEffect(_ => {
+    // console.log('IMG STATE UPDATED');
+    // console.log('x:', x, 'state.x:', state.x);
+    // console.log('y:', y, 'state.y:', state.y);
+    console.log('num:', num)
     setState({ x: x, y: y, width: w })
-  }, [x, y, w])
+  }, [x]);
+
+  useEffect(_ => { // CREATE OPTION ELEMENTS
+    const arr = [];
+    for (let i = 0; i < numImgs; i++) {
+      arr.push(<option value={i + 1} key={i}>{i + 1}</option>)
+    }
+    setOptions(arr);
+  }, [numImgs]);
 
   const pxToPercent = (num, dimension) => {
     return dimension === 'x' ?
@@ -56,26 +47,36 @@ export default function ImageComp({ x, y, w, src, percentToPx, updateImgValues }
       (num / window.innerHeight) * 100;
   }
 
+
   return (
     <Rnd
-      style={{border: '1px solid green'}}
+      // style={{ border: '1px solid green' }}
       lockAspectRatio={true}
-      enableResizing={{ bottomLeft: true, bottomRight: true }}
+      // enableResizing={{ bottomLeft: true, bottomRight: true }}
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
       onDragStop={(e, d) => {
+        // console.log('ONDRAGSTOP:', d.x);
         setState({ ...state, x: d.x, y: d.y });
-        updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'), Number(state.width.slice(0, -1)));
+        updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
+        // console.log('ONRESIZESTOP:', position.x);
         setState({
           width: ref.style.width,
           ...position
         });
-        updateImgValues(pxToPercent(state.x, 'x'), pxToPercent(state.y, 'y'), Number(ref.style.width.slice(0, -1)));
+        updateImgValues(pxToPercent(position.x, 'x'), pxToPercent(position.y, 'y'), Number(ref.style.width.slice(0, -1)));
       }}
     >
-      <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
+      <div style={{ position: 'relative' }}>
+        <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
+        <SInfo>
+          <SSelect value={imgNum} onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)) }} >
+            {options}
+          </SSelect>
+        </SInfo>
+      </div>
     </Rnd>
   )
 }
