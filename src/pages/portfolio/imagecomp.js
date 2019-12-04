@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import styled from 'styled-components';
+import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 
 const SInfo = styled.div`
@@ -15,23 +18,24 @@ const SInfo = styled.div`
 
 const SSelect = styled.select`
   border: none;
-  margin-left: 10px;
+  margin-right: 10px;
   cursor: inherit;
 `
 
-export default function ImageComp({ x, y, w, numImgs, num, src, updateImgValues, updateImgNum }) {
+export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
-  const [imgNum, setImgNum] = useState(num);
+  const [imgNum, setImgNum] = useState();
 
   useEffect(_ => {
-    // console.log('IMG STATE UPDATED');
-    // console.log('x:', x, 'state.x:', state.x);
-    // console.log('y:', y, 'state.y:', state.y);
-    console.log('num:', num)
-    setState({ x: x, y: y, width: w })
+    setState({ x: x, y: y, width: w });
   }, [x]);
+
+  useEffect(_ => {
+    console.log('img component num:', num);
+    setImgNum(num);
+  }, [num]);
 
   useEffect(_ => { // CREATE OPTION ELEMENTS
     const arr = [];
@@ -72,9 +76,13 @@ export default function ImageComp({ x, y, w, numImgs, num, src, updateImgValues,
       <div style={{ position: 'relative' }}>
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
-          <SSelect value={imgNum} onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)) }} >
+          <SSelect value={imgNum}
+            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); }} >
             {options}
           </SSelect>
+          <FontAwesomeIcon icon={faTrash}
+            onClick={_ => deleteImage(index)}
+          />
         </SInfo>
       </div>
     </Rnd>

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { faUpload, faSave } from "@fortawesome/free-solid-svg-icons";
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
@@ -29,10 +29,11 @@ const SImages_Container = styled.div`
 
 function Slide({ slideData, setToggle, toggle }) {
 
-  // const [window.innerWidth, setwindow.innerWidth] = useState(null);
   const [imgsValues, setImgsValues] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [elementsDone, setElementsDone] = useState(false); // prevents re-triggering of creation of image elements on imgsValue change
+  const [imgNums, setImgNums] = useState([]);
+  const [unsavedChange, setUnsavedChange] = useState(false);
   const [pg, setPg] = useState({});
 
 
@@ -40,9 +41,12 @@ function Slide({ slideData, setToggle, toggle }) {
   const pgImgs = slideData[pgCurrent].imgs;
 
   useEffect(_ => {
-    console.log('slideData:', slideData)
+    console.log('slideData[pgCurrent]:', slideData[pgCurrent])
   }, [slideData]);
 
+
+  //________________________________________________________________________________
+  // CREATE IMAGES AND PASS IN DATA
 
   useEffect(_ => { // SET IMG DEFAULT VALUES
     // if (window.innerWidth) {
@@ -57,10 +61,10 @@ function Slide({ slideData, setToggle, toggle }) {
 
     pgImgs.map(img => {
       const position = {
-        x: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x,
-        y: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y
+        x: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x : 10,
+        y: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y : 10
       };
-      const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
+      const width = img.widths[0] ? img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width : 30;
 
       setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
     });
@@ -70,6 +74,7 @@ function Slide({ slideData, setToggle, toggle }) {
   useEffect(_ => { // CREATE IMG ELEMENTS
     if (imgsValues[0] && !elementsDone) {
       console.log('CREATE IMG ELEMENTS. IMGS VALUES:', imgsValues);
+      const nums = [];
 
       const imgs = pgImgs.map((img, i) => {
 
@@ -99,6 +104,16 @@ function Slide({ slideData, setToggle, toggle }) {
           });
         }
 
+        const updateImgNums = (num) => {
+          setImgNums(imgNums => {
+            const arr = [...imgNums];
+            arr[i] = num;
+
+            return arr;
+          })
+        }
+
+        nums.push(img.num);
 
         return (
           <ImageComp
@@ -108,22 +123,32 @@ function Slide({ slideData, setToggle, toggle }) {
             numImgs={pgImgs.length}
             num={img.num}
             src={`http://localhost:1337${img.url}`}
+            index={i}
             updateImgValues={updateImgValues}
             updateImgNum={updateImgNum}
+            updateImgNums={updateImgNums}
+            deleteImage={deleteImage}
             key={i}
           />
         )
       });
 
+      setImgNums(nums);
       setImgElements(imgs);
       setElementsDone(true);
     }
 
   }, [imgsValues]);
 
-  useEffect(_ => {
-    console.log('imgsValues:', imgsValues)
-  }, [imgsValues])
+
+  //________________________________________________________________________________
+  // HANDLE API CALLS
+
+  const reset = () => {
+    setImgsValues([]);
+    setElementsDone(false);
+    setToggle(!toggle);
+  }
 
   const uploadPropertyValues = () => {
 
@@ -164,17 +189,97 @@ function Slide({ slideData, setToggle, toggle }) {
       promises.push(numPromise);
     });
 
-    // console.log('promises:', promises)
     Promise.all(promises)
       .then(axios.spread((...responses) => {
         if (responses.length === pgImgs.length * 3) {
-          setImgsValues([]);
-          setElementsDone(false);
-          setToggle(!toggle);
+          reset();
         }
-      }))
+      }));
   }
 
+  const uploadImage = e => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    formData.append('ref', 'image');
+    formData.append('field', 'image');
+
+    axios.post("http://localhost:1337/images", { num: pgImgs.length + 1, slide: slideData[pgCurrent].id })
+      .then(res => {
+        console.log(res);
+
+        formData.append('refId', res.data.id);
+
+        axios.post(`http://localhost:1337/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+          .then(res => {
+            console.log(res);
+            reset();
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  const deleteImage = (index) => {
+    const positionIds = pgImgs[index].positions.map(position => position.id);
+    const widthIds = pgImgs[index].widths.map(width => width.id);
+
+    console.log('positionIds:', positionIds);
+    console.log('widthIds:', widthIds)
+
+    const promises = [];
+
+    positionIds.forEach(id => {
+      promises.push(axios.delete(`http://localhost:1337/positions/${id}`));
+    });
+    widthIds.forEach(id => {
+      promises.push(axios.delete(`http://localhost:1337/widths/${id}`));
+    });
+    promises.push(axios.delete(`http://localhost:1337/images/${pgImgs[index].id}`));
+
+    Promise.all(promises)
+      .then(axios.spread((...responses) => {
+        console.log('responses:', responses);
+        const nums = pgImgs.map(img => img.num);
+        nums.splice(index, 1);
+        const numsSorted = nums.slice().sort();
+        const imgIds = pgImgs.map(img => img.id)
+        imgIds.splice(index, 1);
+
+        const imgIdsSorted = [];
+        for (let i = 0; i < imgIds.length; i++) {
+          imgIdsSorted.push(imgIds[nums.indexOf(numsSorted[i])]);
+        }
+
+        console.log('imgIds:', imgIds)
+        console.log('imgIdsSorted:', imgIdsSorted)
+
+        const promises = [];
+        imgIdsSorted.forEach((id, i) => {
+          promises.push(axios.put(`http://localhost:1337/images/${id}`, { num: i + 1 }));
+        });
+
+        Promise.all(promises)
+          .then(axios.spread((...responses) => {
+            console.log('responses:', responses);
+            reset();
+          }));
+      }));
+  }
+
+  const remindToSave = () => {
+    const nums = imgsValues.map(img => img.num);
+    console.log('nums:', nums)
+  }
+
+  //________________________________________________________________________________
+  // NAVIGATION
 
   useEffect(_ => { // SET VARIABLES FOR SLIDE NAVIGATION
     let page = { previous: null, next: null };
@@ -193,9 +298,7 @@ function Slide({ slideData, setToggle, toggle }) {
 
 
   const test = () => {
-    // window.location.reload(false)
-    console.log('Test... pgImgs:', pgImgs)
-    console.log('imgsValues:', imgsValues)
+    console.log('imgNums:', imgNums)
   }
 
   return (
@@ -208,6 +311,14 @@ function Slide({ slideData, setToggle, toggle }) {
       {pg.next && // -> prevent unneccesary render
         <ImageNav previousPage={pg.previous} nextPage={pg.next} />
       }
+      {/* <FontAwesomeIcon icon={faUpload}
+        style={{ zIndex: 2, position: 'fixed', bottom: '50px', right: '20px', cursor: 'pointer' }}
+      > */}
+      <form id='form' onSubmit={e => uploadImage(e)} style={{ zIndex: 2 }}>
+        <input type="file" name="files" />
+        <input type="submit" value="Submit" />
+      </form>
+      {/* </FontAwesomeIcon> */}
       <FontAwesomeIcon icon={faSave}
         style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', cursor: 'pointer' }}
         onClick={_ => uploadPropertyValues()}

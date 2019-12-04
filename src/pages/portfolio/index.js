@@ -136,33 +136,6 @@ export default function Portfolio() {
   }, [slideData]);
 
 
-  // const submitUpload = e => {
-  //   e.preventDefault();
-
-  //   const formData = new FormData(e.target);
-  //   formData.append('ref', 'image');
-  //   formData.append('field', 'image');
-
-  //   axios.post("http://localhost:1337/images", {slide: '5dd5cbfecc6e1a0ee4066b29'})
-  //     .then(res => {
-  //       console.log(res);
-
-  //       formData.append('refId', res.data.id);
-
-  //       axios.post(`http://localhost:1337/upload`, formData, {
-  //         headers: { 'Content-Type': 'multipart/form-data' },
-  //       })
-  //         .then(res => {
-  //           console.log(res);
-  //         })
-  //         .catch(err => {
-  //           console.log(err);
-  //         });
-  //     })
-  //     .catch(err => {
-  //       console.log(err);
-  //     });
-  // }
   const setToggle = () => {
     console.log('TOGGLE');
 
@@ -182,11 +155,6 @@ export default function Portfolio() {
 
   return (
     <>
-      {/* <form id='form' onSubmit={e => submitUpload(e)}>
-     <input type="file" name="files" />
-     <input type="submit" value="Submit" />
-    </form> */}
-
       <Switch>
         <Route exact path={path}>
           <div>
