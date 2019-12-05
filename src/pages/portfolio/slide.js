@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
+import OutsideClickHandler from 'react-outside-click-handler';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload, faSave } from "@fortawesome/free-solid-svg-icons";
 import Navbar from '../../components/navbar'
@@ -21,20 +22,83 @@ const SImages_Container = styled.div`
   /* border: 3px solid blue; */
 `
 
-// const SImage_Container = styled.div`
-//   display: inline-block;
-//   cursor: grab;
-//   width: 40%;
-// `
+const SReminderScreen = styled.div`
+  z-index: 10;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(146,147,148, 0.6);
+`
+
+const SReminderBox = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 400px;
+  height: 200px;
+  text-align: center;
+  background-color: white;
+  border-radius: 5px;
+
+  & p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 23px;
+    color: #5C5C5C;
+    margin-top: 30px;
+  }
+`
+
+const SButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-evenly;
+  width: 100%;
+  margin-top: 70px;
+`
+
+const SButton = styled.button`
+  background-color: #89D4F7;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 3px;
+  font-size: 15px;
+`
+
+const SIconContainer = styled.div`
+  display: inline-block;
+  position: relative;
+  border: 1px solid black;
+`
+
+const SSaveWarning = styled.p`
+  position: absolute;
+  top: -100px;
+  left: -20px;
+  width: 200px;
+  background-color: #89D4F7;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 3px;
+  font-size: 15px;
+`
+
+const SLinkContainer = SButton;
 
 function Slide({ slideData, setToggle, toggle }) {
 
   const [imgsValues, setImgsValues] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [elementsDone, setElementsDone] = useState(false); // prevents re-triggering of creation of image elements on imgsValue change
-  const [imgNums, setImgNums] = useState([]);
   const [unsavedChange, setUnsavedChange] = useState(false);
+  const [remind, setRemind] = useState(false);
+  const [numError, setNumError] = useState(false);
   const [pg, setPg] = useState({});
+  const [activeLink, setActiveLink] = useState(null);
 
 
   const pgCurrent = Number(useParams().slideId);
@@ -49,7 +113,6 @@ function Slide({ slideData, setToggle, toggle }) {
   // CREATE IMAGES AND PASS IN DATA
 
   useEffect(_ => { // SET IMG DEFAULT VALUES
-    // if (window.innerWidth) {
     console.log('IMG DEFAULT VALUES SET. PG IMGS:', pgImgs)
     const getIndexOfPropertyForScreenWidth = (img, property) => {
       const values = img[property].map(size => size.screen);
@@ -68,13 +131,11 @@ function Slide({ slideData, setToggle, toggle }) {
 
       setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
     });
-    // }
   }, [slideData]);
 
   useEffect(_ => { // CREATE IMG ELEMENTS
     if (imgsValues[0] && !elementsDone) {
       console.log('CREATE IMG ELEMENTS. IMGS VALUES:', imgsValues);
-      const nums = [];
 
       const imgs = pgImgs.map((img, i) => {
 
@@ -104,16 +165,9 @@ function Slide({ slideData, setToggle, toggle }) {
           });
         }
 
-        const updateImgNums = (num) => {
-          setImgNums(imgNums => {
-            const arr = [...imgNums];
-            arr[i] = num;
-
-            return arr;
-          })
+        const updateUnsavedChange = _ => {
+          setUnsavedChange(!unsavedChange);
         }
-
-        nums.push(img.num);
 
         return (
           <ImageComp
@@ -126,14 +180,13 @@ function Slide({ slideData, setToggle, toggle }) {
             index={i}
             updateImgValues={updateImgValues}
             updateImgNum={updateImgNum}
-            updateImgNums={updateImgNums}
             deleteImage={deleteImage}
+            updateUnsavedChange={updateUnsavedChange}
             key={i}
           />
         )
       });
 
-      setImgNums(nums);
       setImgElements(imgs);
       setElementsDone(true);
     }
@@ -195,6 +248,18 @@ function Slide({ slideData, setToggle, toggle }) {
           reset();
         }
       }));
+  }
+
+  const handleSave = _ => {
+    const nums = imgsValues.map(img => img.num).sort();
+
+    for (let i = 0; i < nums.length - 1; i++) {
+      if (nums[i] === nums[i + 1]) {
+        setNumError(true);
+        return;
+      }
+    }
+    uploadPropertyValues();
   }
 
   const uploadImage = e => {
@@ -273,11 +338,6 @@ function Slide({ slideData, setToggle, toggle }) {
       }));
   }
 
-  const remindToSave = () => {
-    const nums = imgsValues.map(img => img.num);
-    console.log('nums:', nums)
-  }
-
   //________________________________________________________________________________
   // NAVIGATION
 
@@ -295,10 +355,21 @@ function Slide({ slideData, setToggle, toggle }) {
     setPg(page);
   }, [pgCurrent]);
 
+  const remindToSave = (page) => {
+
+    if (unsavedChange) {
+      page === 'previous' ? setActiveLink(pg.previous) : setActiveLink(pg.next);
+      setRemind(true);
+    }
+  }
+
+  useEffect(_ => {
+    console.log('remind:', remind)
+  }, [remind])
 
 
   const test = () => {
-    console.log('imgNums:', imgNums)
+
   }
 
   return (
@@ -308,9 +379,6 @@ function Slide({ slideData, setToggle, toggle }) {
       <SImages_Container>
         {imgElements}
       </SImages_Container>
-      {pg.next && // -> prevent unneccesary render
-        <ImageNav previousPage={pg.previous} nextPage={pg.next} />
-      }
       {/* <FontAwesomeIcon icon={faUpload}
         style={{ zIndex: 2, position: 'fixed', bottom: '50px', right: '20px', cursor: 'pointer' }}
       > */}
@@ -319,14 +387,48 @@ function Slide({ slideData, setToggle, toggle }) {
         <input type="submit" value="Submit" />
       </form>
       {/* </FontAwesomeIcon> */}
-      <FontAwesomeIcon icon={faSave}
-        style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', cursor: 'pointer' }}
-        onClick={_ => uploadPropertyValues()}
-      // onClick={_ => console.log(newImgPositions)}
-      />
+      <SIconContainer>
+        <FontAwesomeIcon icon={faSave}
+          style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', width: '40px', height: '40px', cursor: 'pointer' }}
+          onClick={_ => handleSave()}
+        />
+        {/* <SSaveWarning>
+          Image number error. Make sure no 2 are identical.
+        </SSaveWarning> */}
+      </SIconContainer>
+      {remind &&
+        <SReminderScreen>
+          <OutsideClickHandler
+            onOutsideClick={_ => setRemind(false)}
+          >
+            <SReminderBox>
+              <p>There are unsaved changes!</p>
+              <SButtonContainer>
+                <SLinkContainer>
+                  <Link to={`/portfolio/${activeLink}`}
+                    onClick={_ => setRemind(false)}
+                  >
+                    I don't care, proceed!
+                  </Link>
+                </SLinkContainer>
+                <SButton onClick={_ => uploadPropertyValues()}>Save</SButton>
+              </SButtonContainer>
+            </SReminderBox>
+          </OutsideClickHandler>
+        </SReminderScreen>
+      }
+      {pg.next && // -> prevent unneccesary render
+        <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
+      }
     </SPortfolio>
   )
 }
 
 export default Slide;
 
+// const initialNums = pgImgs.map(img => img.num);
+
+// let error;
+// for (let i = 0; i < nums.length; i++) {
+//   if (nums[i] !== initialNums[i]) error = true;
+// }

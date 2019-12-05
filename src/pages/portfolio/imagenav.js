@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -19,22 +19,27 @@ const SSlideLinkContainer = styled.div`
 const SSlideLink = styled.div`
   color: black;
   text-decoration: none;
+  cursor: pointer;
 `
 
 
-const ImageNav = memo(({ previousPage, nextPage }) => {
+const ImageNav = memo(({ previousPage, nextPage, unsavedChange, remindToSave }) => {
+
 
   return (
     <SSlideLinkContainer>
-      <SSlideLink>
-        <Link
+      <SSlideLink
+        onClick={_ => remindToSave('previous')}
+      >
+        {/* <Link style={{ pointerEvents: 'none' }} */}
+        <Link style={unsavedChange ? { pointerEvents: 'none' } : null}
           to={`/portfolio/${previousPage}`}
         >
           previous page
         </Link>
       </SSlideLink>
       <SSlideLink>
-        <Link
+        <Link style={{ pointerEvents: 'none' }}
           to={`/portfolio/${nextPage}`}
         >
           next page

@@ -22,7 +22,7 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage }) {
+export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
@@ -63,6 +63,7 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
         // console.log('ONDRAGSTOP:', d.x);
         setState({ ...state, x: d.x, y: d.y });
         updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
+        updateUnsavedChange();
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
         // console.log('ONRESIZESTOP:', position.x);
@@ -71,13 +72,14 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
           ...position
         });
         updateImgValues(pxToPercent(position.x, 'x'), pxToPercent(position.y, 'y'), Number(ref.style.width.slice(0, -1)));
+        updateUnsavedChange();
       }}
     >
       <div style={{ position: 'relative' }}>
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
           <SSelect value={imgNum}
-            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); }} >
+            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }} >
             {options}
           </SSelect>
           <FontAwesomeIcon icon={faTrash}
