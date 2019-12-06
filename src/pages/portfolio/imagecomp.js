@@ -22,7 +22,7 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange }) {
+export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
@@ -79,7 +79,9 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
           <SSelect value={imgNum}
-            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }} >
+            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }}
+            onClick={_ => updateNumError()}
+          >
             {options}
           </SSelect>
           <FontAwesomeIcon icon={faTrash}

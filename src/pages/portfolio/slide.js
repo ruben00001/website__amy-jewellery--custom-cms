@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpload, faSave } from "@fortawesome/free-solid-svg-icons";
+import { faUpload, faSave, faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
@@ -68,26 +68,49 @@ const SButton = styled.button`
   font-size: 15px;
 `
 
+const SLinkContainer = SButton;
+
 const SIconContainer = styled.div`
-  display: inline-block;
-  position: relative;
-  border: 1px solid black;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  /* border: 1px solid black; */
 `
 
-const SSaveWarning = styled.p`
+const SSaveWarningContainer = styled.div`
   position: absolute;
-  top: -100px;
-  left: -20px;
+  top: -130px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 200px;
-  background-color: #89D4F7;
-  color: white;
+  border: 1px solid #D93025;
+  font-family: 'Roboto', sans-serif;
+  font-size: 11px;
   padding: 8px 15px;
-  border: none;
   border-radius: 3px;
   font-size: 15px;
 `
 
-const SLinkContainer = SButton;
+const SSaveWarning = styled.p`
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 500;
+  color: #D93025;
+  background-color: white;  
+  padding: 0px 2px;
+`
+
+const SSaveWarningMessage = styled.p`
+  text-align: center;
+`
+
+
 
 function Slide({ slideData, setToggle, toggle }) {
 
@@ -169,6 +192,10 @@ function Slide({ slideData, setToggle, toggle }) {
           setUnsavedChange(!unsavedChange);
         }
 
+        const updateNumError = _ => {
+          setNumError(false);
+        }
+
         return (
           <ImageComp
             x={percentToPx(imgsValues[i].position.x, 'x')}
@@ -182,6 +209,7 @@ function Slide({ slideData, setToggle, toggle }) {
             updateImgNum={updateImgNum}
             deleteImage={deleteImage}
             updateUnsavedChange={updateUnsavedChange}
+            updateNumError={updateNumError}
             key={i}
           />
         )
@@ -389,12 +417,18 @@ function Slide({ slideData, setToggle, toggle }) {
       {/* </FontAwesomeIcon> */}
       <SIconContainer>
         <FontAwesomeIcon icon={faSave}
-          style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', width: '40px', height: '40px', cursor: 'pointer' }}
+          style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', fontSize: '30px', cursor: 'pointer' }}
           onClick={_ => handleSave()}
         />
-        {/* <SSaveWarning>
-          Image number error. Make sure no 2 are identical.
-        </SSaveWarning> */}
+        {numError &&
+          <SSaveWarningContainer>
+            <SSaveWarning>Warning</SSaveWarning>
+            <FontAwesomeIcon icon={faTimesCircle}
+              style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
+            />
+            <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
+          </SSaveWarningContainer>
+        }
       </SIconContainer>
       {remind &&
         <SReminderScreen>
