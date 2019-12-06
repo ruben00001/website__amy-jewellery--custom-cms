@@ -9,17 +9,134 @@ import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
 
-const SPortfolio = styled.div`
-  /* position: relative; */
-  height: 100vh;
+
+const SPageContainer = styled.div`
   display: flex;
-  flex-flow: column;
-  overflow: hidden;
+  flex-direction: column;
+  height: 100vh;
 `
 
-const SImages_Container = styled.div`
+const SSlideControl = styled.div`
+  display: flex;
+  justify-content: space-around;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  background-color: white;
+  border-bottom: 1px solid #d9d9d9;
+  font-family: 'Roboto', sans-serif;
+  /* border: 1px solid yellow; */
+`
+
+const SDeviceLabel = styled.label`
+  margin-right: 10px;
+  font-weight: 500;
+`
+
+const SSelect = styled.select`
+  padding: 2px 4px;
+  outline: none;
+`
+
+const SImageInput = styled.input`
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+`
+
+const SImageLabel = styled.label`
+  font-weight: 500;
+  cursor: pointer;
+  /* border: 1px solid black; */
+  /* padding: 3px 8px; */
+`
+
+const SImageSubmit = styled.input`
+  margin-left: 20px;
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 2px;
+  padding: 4px 6px;
+  font-weight: bold;
+
+`
+
+const SIconContainer = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  p {
+    font-weight: 500;
+    margin-right: 10px;
+  }
+`
+
+const SSaveWarningContainer = styled.div`
+  position: absolute;
+  bottom: -147px;
+  left: -1px;
+  /* right: 20px; */
+  z-index: 10;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px;
+  border: 1px solid #D93025;
+  font-family: 'Roboto', sans-serif;
+  font-size: 11px;
+  padding: 8px 15px;
+  border-radius: 3px;
+  font-size: 15px;
+`
+
+const SWarningButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-evenly;
+  width: 100%;
+  margin-top: 70px;
+`
+
+const SWarningButton = styled.button`
+  background-color: #89D4F7;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 3px;
+  font-size: 15px;
+`
+
+const SLinkContainer = SWarningButton;
+
+const SSaveWarningMessage = styled.p`
+  text-align: center;
+`
+
+const SSlideContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  background-color: #f9f9f9;
+  /* border: 1px solid yellow; */
+`
+
+const SSlide = styled.div`
+  position: relative;
+  width: 90%;
+  height: 80vh;
+  margin: 0 auto;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid #e6e6e6;
+`
+
+const SImagesContainer = styled.div`
   height: 100vh;
-  /* border: 3px solid blue; */
+  /* border: 2px solid blue; */
 `
 
 const SReminderScreen = styled.div`
@@ -52,63 +169,7 @@ const SReminderBox = styled.div`
   }
 `
 
-const SButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-evenly;
-  width: 100%;
-  margin-top: 70px;
-`
 
-const SButton = styled.button`
-  background-color: #89D4F7;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 3px;
-  font-size: 15px;
-`
-
-const SLinkContainer = SButton;
-
-const SIconContainer = styled.div`
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  width: 40px;
-  height: 40px;
-  /* border: 1px solid black; */
-`
-
-const SSaveWarningContainer = styled.div`
-  position: absolute;
-  top: -130px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 200px;
-  border: 1px solid #D93025;
-  font-family: 'Roboto', sans-serif;
-  font-size: 11px;
-  padding: 8px 15px;
-  border-radius: 3px;
-  font-size: 15px;
-`
-
-const SSaveWarning = styled.p`
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-weight: 500;
-  color: #D93025;
-  background-color: white;  
-  padding: 0px 2px;
-`
-
-const SSaveWarningMessage = styled.p`
-  text-align: center;
-`
 
 
 
@@ -120,6 +181,7 @@ function Slide({ slideData, setToggle, toggle }) {
   const [unsavedChange, setUnsavedChange] = useState(false);
   const [remind, setRemind] = useState(false);
   const [numError, setNumError] = useState(false);
+  const [file, setFile] = useState(null);
   const [pg, setPg] = useState({});
   const [activeLink, setActiveLink] = useState(null);
 
@@ -401,68 +463,104 @@ function Slide({ slideData, setToggle, toggle }) {
   }
 
   return (
-    <SPortfolio>
-      <Navbar />
-      {/* <h1 style={{ zIndex: 100 }} onClick={_ => test()}>Test</h1> */}
-      <SImages_Container>
-        {imgElements}
-      </SImages_Container>
-      {/* <FontAwesomeIcon icon={faUpload}
+    <SPageContainer>
+      <SSlideControl>
+        <div>
+          <SDeviceLabel htmlFor="device">Device:</SDeviceLabel>
+          <SSelect id="device">
+            <option>24"</option>
+            <option>22"</option>
+            <option>20"</option>
+            <option>19"</option>
+            <option>15"</option>
+          </SSelect>
+          {/* <SDeviceButton>Fit to page</SDeviceButton>
+          <SDeviceButton>To scale</SDeviceButton> */}
+        </div>
+        <div>
+          <form id='form' onSubmit={e => uploadImage(e)} style={{ position: "relative" }}>
+            {/* <div style={{ position: "absolute", left: "-94px" }}>
+              <label htmlFor="upload" style={{ marginRight: "15px" }}>Add Image:</label>
+              <FontAwesomeIcon icon={faUpload} id="upload" />
+            </div> */}
+            <SImageInput type="file" name="files" id="file"
+              // onChange={e => console.log(e.target.value.match(/[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))/g))}
+              onChange={e => setFile(e.target.value.match(/[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))/g))}
+            />
+            <SImageLabel htmlFor="file">
+              {file ? file[0] : <><FontAwesomeIcon icon={faUpload} id="upload" style={{ marginRight: '8px' }} /> Add Image</>}
+            </SImageLabel>
+            {file ? <SImageSubmit type="submit" value="Submit" /> : null}
+          </form>
+        </div>
+        <SIconContainer>
+          <p>Save changes</p>
+          <FontAwesomeIcon icon={faSave} id="save"
+            style={{ fontSize: '25px', cursor: 'pointer' }}
+            onClick={_ => handleSave()}
+          />
+          {numError &&
+            <OutsideClickHandler
+              onOutsideClick={_ => setNumError(false)}
+            >
+              <SSaveWarningContainer>
+                <FontAwesomeIcon icon={faTimesCircle}
+                  style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
+                />
+                <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
+              </SSaveWarningContainer>
+            </OutsideClickHandler>
+          }
+        </SIconContainer>
+      </SSlideControl>
+      <SSlideContainer>
+        <SSlide>
+          <Navbar />
+          {/* <h1 style={{ zIndex: 100 }} onClick={_ => test()}>Test</h1> */}
+          <SImagesContainer>
+            {imgElements}
+          </SImagesContainer>
+          {/* <FontAwesomeIcon icon={faUpload}
         style={{ zIndex: 2, position: 'fixed', bottom: '50px', right: '20px', cursor: 'pointer' }}
       > */}
-      <form id='form' onSubmit={e => uploadImage(e)} style={{ zIndex: 2 }}>
-        <input type="file" name="files" />
-        <input type="submit" value="Submit" />
-      </form>
-      {/* </FontAwesomeIcon> */}
-      <SIconContainer>
-        <FontAwesomeIcon icon={faSave}
-          style={{ zIndex: 2, position: 'fixed', bottom: '20px', right: '20px', fontSize: '30px', cursor: 'pointer' }}
-          onClick={_ => handleSave()}
-        />
-        {numError &&
-          <SSaveWarningContainer>
-            <SSaveWarning>Warning</SSaveWarning>
-            <FontAwesomeIcon icon={faTimesCircle}
-              style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
-            />
-            <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
-          </SSaveWarningContainer>
-        }
-      </SIconContainer>
-      {remind &&
-        <SReminderScreen>
-          <OutsideClickHandler
-            onOutsideClick={_ => setRemind(false)}
-          >
-            <SReminderBox>
-              <p>There are unsaved changes!</p>
-              <SButtonContainer>
-                <SLinkContainer>
-                  <Link to={`/portfolio/${activeLink}`}
-                    onClick={_ => setRemind(false)}
-                  >
-                    I don't care, proceed!
-                  </Link>
-                </SLinkContainer>
-                <SButton onClick={_ => uploadPropertyValues()}>Save</SButton>
-              </SButtonContainer>
-            </SReminderBox>
-          </OutsideClickHandler>
-        </SReminderScreen>
-      }
-      {pg.next && // -> prevent unneccesary render
-        <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
-      }
-    </SPortfolio>
+
+          {/* </FontAwesomeIcon> */}
+
+          {remind &&
+            <SReminderScreen>
+              <OutsideClickHandler
+                onOutsideClick={_ => setRemind(false)}
+              >
+                <SReminderBox>
+                  <p>There are unsaved changes!</p>
+                  <SWarningButtonContainer>
+                    <SLinkContainer>
+                      <Link to={`/portfolio/${activeLink}`}
+                        onClick={_ => setRemind(false)}
+                      >
+                        I don't care, proceed!
+                      </Link>
+                    </SLinkContainer>
+                    <SWarningButton onClick={_ => uploadPropertyValues()}>Save</SWarningButton>
+                  </SWarningButtonContainer>
+                </SReminderBox>
+              </OutsideClickHandler>
+            </SReminderScreen>
+          }
+          {pg.next && // -> prevent unneccesary render
+            <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
+          }
+        </SSlide>
+      </SSlideContainer>
+    </SPageContainer>
   )
 }
 
 export default Slide;
 
-// const initialNums = pgImgs.map(img => img.num);
+    // const initialNums = pgImgs.map(img => img.num);
 
-// let error;
+    // let error;
 // for (let i = 0; i < nums.length; i++) {
 //   if (nums[i] !== initialNums[i]) error = true;
 // }

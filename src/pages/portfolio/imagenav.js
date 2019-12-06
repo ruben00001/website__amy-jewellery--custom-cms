@@ -4,8 +4,8 @@ import styled from 'styled-components';
 
 
 const SSlideLinkContainer = styled.div`
-  position: fixed;
-  bottom: 10px;
+  position: absolute;
+  bottom: 0;
   z-index: 1;
   height: 30px;
   display: flex;
