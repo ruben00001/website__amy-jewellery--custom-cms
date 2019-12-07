@@ -60,7 +60,7 @@ const SImageSubmit = styled.input`
   border-radius: 2px;
   padding: 4px 6px;
   font-weight: bold;
-
+  cursor: pointer;
 `
 
 const SIconContainer = styled.div`
@@ -76,7 +76,7 @@ const SIconContainer = styled.div`
 
 const SSaveWarningContainer = styled.div`
   position: absolute;
-  bottom: -147px;
+  bottom: -120px;
   left: -1px;
   /* right: 20px; */
   z-index: 10;
@@ -87,10 +87,9 @@ const SSaveWarningContainer = styled.div`
   width: 200px;
   border: 1px solid #D93025;
   font-family: 'Roboto', sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   padding: 8px 15px;
   border-radius: 3px;
-  font-size: 15px;
 `
 
 const SWarningButtonContainer = styled.div`
@@ -126,16 +125,18 @@ const SSlideContainer = styled.div`
 
 const SSlide = styled.div`
   position: relative;
-  width: 90%;
-  height: 80vh;
+  width: ${props => `${props.width}px`};
+  height: ${props => `${props.height}px`};
+  /* max-width: 95%;
+  max-height: 95%; */
   margin: 0 auto;
-  overflow: hidden;
+  /* overflow: hidden; */
   background-color: white;
   border: 1px solid #e6e6e6;
 `
 
 const SImagesContainer = styled.div`
-  height: 100vh;
+  height: 100%;
   /* border: 2px solid blue; */
 `
 
@@ -175,6 +176,8 @@ const SReminderBox = styled.div`
 
 function Slide({ slideData, setToggle, toggle }) {
 
+  const [windowSize, setWindowSize] = useState({ width: null, height: null });
+  const [device, setDevice] = useState({ width: 1920, height: 1600 });
   const [imgsValues, setImgsValues] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [elementsDone, setElementsDone] = useState(false); // prevents re-triggering of creation of image elements on imgsValue change
@@ -193,42 +196,57 @@ function Slide({ slideData, setToggle, toggle }) {
     console.log('slideData[pgCurrent]:', slideData[pgCurrent])
   }, [slideData]);
 
+  useEffect(_ => {
+    const width = window.innerWidth * .95 - 2;
+    const height = (width + 2) * (device.height / device.width) - 2;
+
+    setWindowSize({ width: width, height: height });
+  }, [slideData]);
+
+  useEffect(_ => {
+    console.log('windowSize:', windowSize)
+  }, [windowSize]);
+
+  // *** mq may be wrong way around.
+
 
   //________________________________________________________________________________
   // CREATE IMAGES AND PASS IN DATA
 
   useEffect(_ => { // SET IMG DEFAULT VALUES
-    console.log('IMG DEFAULT VALUES SET. PG IMGS:', pgImgs)
-    const getIndexOfPropertyForScreenWidth = (img, property) => {
-      const values = img[property].map(size => size.screen);
-      const valuesSorted = img[property].map(size => size.screen).sort((a, b) => b - a);
-      for (let i = 0; i < valuesSorted.length; i++) {
-        if (window.innerWidth >= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
+    if (windowSize.width) {
+      console.log('IMG DEFAULT VALUES SET. PG IMGS:', pgImgs)
+      const getIndexOfPropertyForScreenWidth = (img, property) => {
+        const values = img[property].map(size => size.screen);
+        const valuesSorted = img[property].map(size => size.screen).sort((a, b) => b - a);
+        for (let i = 0; i < valuesSorted.length; i++) {
+          if (device.width >= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
+        }
       }
+
+      pgImgs.map(img => {
+        const position = {
+          x: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x : 10,
+          y: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y : 10
+        };
+        const width = img.widths[0] ? img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width : 30;
+
+        setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
+      });
     }
-
-    pgImgs.map(img => {
-      const position = {
-        x: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x : 10,
-        y: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y : 10
-      };
-      const width = img.widths[0] ? img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width : 30;
-
-      setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
-    });
-  }, [slideData]);
+  }, [windowSize]);
 
   useEffect(_ => { // CREATE IMG ELEMENTS
     if (imgsValues[0] && !elementsDone) {
       console.log('CREATE IMG ELEMENTS. IMGS VALUES:', imgsValues);
 
-      const imgs = pgImgs.map((img, i) => {
+      const percentToPx = (percent, dimension) => {
+        return dimension === 'x' ?
+          (percent * windowSize.width) / 100 :
+          (percent * windowSize.height) / 100;
+      }
 
-        const percentToPx = (percent, dimension) => {
-          return dimension === 'x' ?
-            (percent * window.innerWidth) / 100 :
-            (percent * window.innerHeight) / 100;
-        }
+      const imgs = pgImgs.map((img, i) => {
 
         const updateImgValues = (x, y, width) => {
           setImgsValues(imgsValues => {
@@ -267,6 +285,7 @@ function Slide({ slideData, setToggle, toggle }) {
             num={img.num}
             src={`http://localhost:1337${img.url}`}
             index={i}
+            windowSize={windowSize}
             updateImgValues={updateImgValues}
             updateImgNum={updateImgNum}
             deleteImage={deleteImage}
@@ -306,20 +325,20 @@ function Slide({ slideData, setToggle, toggle }) {
         let promise;
 
         for (let i = 0; i < arr.length; i++) {
-          if (arr[i] === window.innerWidth) id = img[property][i].id;
+          if (arr[i] === device.width) id = img[property][i].id;
         }
 
         if (id) {
           promise = axios.put(`http://localhost:1337/${property}/${id}`,
             property === 'widths' ?
-              { screenwidth: window.innerWidth, width: imgsValues[i].width } :
-              { screenwidth: window.innerWidth, x: imgsValues[i].position.x, y: imgsValues[i].position.y }
+              { screenwidth: device.width, width: imgsValues[i].width } :
+              { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }
           )
         } else {
           promise = axios.post(`http://localhost:1337/${property}`,
             property === 'widths' ?
-              { screenwidth: window.innerWidth, width: imgsValues[i].width, image: img.id } :
-              { screenwidth: window.innerWidth, x: imgsValues[i].position.x, y: imgsValues[i].position.y, image: img.id }
+              { screenwidth: device.width, width: imgsValues[i].width, image: img.id } :
+              { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y, image: img.id }
           )
         }
         promises.push(promise);
@@ -514,7 +533,7 @@ function Slide({ slideData, setToggle, toggle }) {
         </SIconContainer>
       </SSlideControl>
       <SSlideContainer>
-        <SSlide>
+        <SSlide width={windowSize.width} height={windowSize.height}>
           <Navbar />
           {/* <h1 style={{ zIndex: 100 }} onClick={_ => test()}>Test</h1> */}
           <SImagesContainer>

@@ -22,7 +22,7 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
+export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSize, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
@@ -33,11 +33,10 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
   }, [x]);
 
   useEffect(_ => {
-    console.log('img component num:', num);
     setImgNum(num);
   }, [num]);
 
-  useEffect(_ => { // CREATE OPTION ELEMENTS
+  useEffect(_ => {
     const arr = [];
     for (let i = 0; i < numImgs; i++) {
       arr.push(<option value={i + 1} key={i}>{i + 1}</option>)
@@ -47,9 +46,13 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
 
   const pxToPercent = (num, dimension) => {
     return dimension === 'x' ?
-      (num / window.innerWidth) * 100 :
-      (num / window.innerHeight) * 100;
+      (num / windowSize.width) * 100 :
+      (num / windowSize.height) * 100;
   }
+
+  useEffect(_ => {
+    console.log('windowSize:', windowSize)
+  }, [windowSize])
 
 
   return (
@@ -60,13 +63,14 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, updateImg
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
       onDragStop={(e, d) => {
-        // console.log('ONDRAGSTOP:', d.x);
+        // console.log('ONDRAGSTOP:', d.x, d.y);
         setState({ ...state, x: d.x, y: d.y });
         updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
         updateUnsavedChange();
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
-        // console.log('ONRESIZESTOP:', position.x);
+        // console.log('ONRESIZESTOP:', position.x, position.y);
+        // console.log('ONWIDTHCHANGE:', ref.style.width);
         setState({
           width: ref.style.width,
           ...position
