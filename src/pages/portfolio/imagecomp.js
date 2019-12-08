@@ -50,11 +50,6 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSiz
       (num / windowSize.height) * 100;
   }
 
-  useEffect(_ => {
-    console.log('windowSize:', windowSize)
-  }, [windowSize])
-
-
   return (
     <Rnd
       // style={{ border: '1px solid green' }}

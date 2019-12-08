@@ -34,6 +34,14 @@ const SDeviceLabel = styled.label`
   font-weight: 500;
 `
 
+const SDimensions = styled.p`
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  color: grey;
+  font-size: 14px; 
+`
+
 const SSelect = styled.select`
   padding: 2px 4px;
   outline: none;
@@ -117,6 +125,7 @@ const SSaveWarningMessage = styled.p`
 `
 
 const SSlideContainer = styled.div`
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -177,7 +186,7 @@ const SReminderBox = styled.div`
 
 function Slide({ slideData, setToggle, toggle }) {
 
-  const [device, setDevice] = useState({ width: 1920, height: 1600 });
+  const [device, setDevice] = useState({ width: 1920, height: 1200 });
   const [windowSize, setWindowSize] = useState({ width: null, height: null });
   const [imgsValues, setImgsValues] = useState([]);
   const [imgElements, setImgElements] = useState([]);
@@ -193,24 +202,31 @@ function Slide({ slideData, setToggle, toggle }) {
   const pgCurrent = Number(useParams().slideId);
   const pgImgs = slideData[pgCurrent].imgs;
 
-  useEffect(_ => {
-    console.log('slideData[pgCurrent]:', slideData[pgCurrent])
-  }, [slideData]);
+  // useEffect(_ => {
+  //   console.log('slideData[pgCurrent].imgs:', slideData[pgCurrent].imgs)
+  // }, [slideData]);
 
   useEffect(_ => {
-    let width = window.innerWidth * .95 - 2;
-    let height = (width + 2) * (device.height / device.width) - 2;
-
-    if(height > window.innerHeight - 86) { // 86 = height of control panel + margin
-      height = window.innerHeight * 0.9 - 2; // 20 = margin
-      width = (height + 2) * (device.width / device.height) - 2;
+    if(slideData) {
+      console.log('====================================');
+      console.log('SETTING WINDOW SIZE');
+      console.log('====================================');
+      let width = window.innerWidth * .95 - 2;
+      let height = (width + 2) * (device.height / device.width) - 2;
+  
+      if (height > window.innerHeight - 86) { // 86 = height of control panel + margin
+        height = window.innerHeight * 0.9 - 2; // 20 = margin
+        width = (height + 2) * (device.width / device.height) - 2;
+      }
+  
+      setWindowSize({ width: width, height: height });
     }
-
-    setWindowSize({ width: width, height: height });
-  }, [slideData]);
+  }, [slideData, device]);
 
   useEffect(_ => {
-    console.log('windowSize:', windowSize)
+    if(windowSize.width) {
+      console.log('windowSize:', windowSize)
+    }
   }, [windowSize]);
 
   // *** mq may be wrong way around.
@@ -221,7 +237,10 @@ function Slide({ slideData, setToggle, toggle }) {
 
   useEffect(_ => { // SET IMG DEFAULT VALUES
     if (windowSize.width) {
-      console.log('IMG DEFAULT VALUES SET. PG IMGS:', pgImgs)
+      console.log('====================================');
+      console.log('SETTING IMG VALUES');
+      console.log('====================================');
+      console.log('pgImgs:', pgImgs)
       const getIndexOfPropertyForScreenWidth = (img, property) => {
         const values = img[property].map(size => size.screen);
         const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
@@ -244,7 +263,10 @@ function Slide({ slideData, setToggle, toggle }) {
 
   useEffect(_ => { // CREATE IMG ELEMENTS
     if (imgsValues[0] && !elementsDone) {
-      console.log('CREATE IMG ELEMENTS. IMGS VALUES:', imgsValues);
+      console.log('====================================');
+      console.log('CREATING IMG ELEMENTS');
+      console.log('====================================');
+      console.log('imgvalues', imgsValues);
 
       const percentToPx = (percent, dimension) => {
         return dimension === 'x' ?
@@ -306,7 +328,6 @@ function Slide({ slideData, setToggle, toggle }) {
       setImgElements(imgs);
       setElementsDone(true);
     }
-
   }, [imgsValues]);
 
 
@@ -479,9 +500,30 @@ function Slide({ slideData, setToggle, toggle }) {
     }
   }
 
-  useEffect(_ => {
-    console.log('remind:', remind)
-  }, [remind])
+  const devices = [
+    { size: '24"', width: 1920, height: 1200 },
+    { size: '22"', width: 1680, height: 1050 },
+    { size: '20"', width: 1600, height: 900 },
+    { size: '19"', width: 1440, height: 900 },
+    { size: '15"', width: 1366, height: 768 },
+    { size: '13"', width: 1280, height: 800 },
+    { size: '12"', width: 1024, height: 768 },
+    { size: '10"', width: 1024, height: 600 },
+    { size: 'Nexus 7', width: 960, height: 600 },
+    { size: 'Kindle', width: 800, height: 480 },
+    // {size: 'iPad Pro', width: 1024, height: 1366 },
+    { size: 'iPad', width: 768, height: 1024 },
+    { size: 'iPhone Plus', width: 414, height: 736 },
+    { size: 'iPhone X', width: 375, height: 812 },
+    { size: 'iPhone 6/7/8', width: 375, height: 667 },
+    { size: 'iPhone 5', width: 320, height: 568 },
+  ];
+
+  const updateDevice = index => {
+    setImgsValues([]);
+    setElementsDone(false);
+    setDevice({ width: devices[index].width, height: devices[index].height });
+  }
 
 
   const test = () => {
@@ -493,12 +535,12 @@ function Slide({ slideData, setToggle, toggle }) {
       <SSlideControl>
         <div>
           <SDeviceLabel htmlFor="device">Device:</SDeviceLabel>
-          <SSelect id="device">
-            <option>24"</option>
-            <option>22"</option>
-            <option>20"</option>
-            <option>19"</option>
-            <option>15"</option>
+          <SSelect id="device"
+            onChange={e => updateDevice(e.target.value)}
+          >
+            {devices.map((device, i) =>
+              <option value={i} key={i}>{device.size}</option>
+            )}
           </SSelect>
           {/* <SDeviceButton>Fit to page</SDeviceButton>
           <SDeviceButton>To scale</SDeviceButton> */}
@@ -540,44 +582,39 @@ function Slide({ slideData, setToggle, toggle }) {
         </SIconContainer>
       </SSlideControl>
       <SSlideContainer>
+        <SDimensions>{`${device.width} x ${device.height}`}</SDimensions>
         <SSlide width={windowSize.width} height={windowSize.height}>
           <Navbar />
           {/* <h1 style={{ zIndex: 100 }} onClick={_ => test()}>Test</h1> */}
           <SImagesContainer>
             {imgElements}
           </SImagesContainer>
-          {/* <FontAwesomeIcon icon={faUpload}
-        style={{ zIndex: 2, position: 'fixed', bottom: '50px', right: '20px', cursor: 'pointer' }}
-      > */}
-
-          {/* </FontAwesomeIcon> */}
-
-          {remind &&
-            <SReminderScreen>
-              <OutsideClickHandler
-                onOutsideClick={_ => setRemind(false)}
-              >
-                <SReminderBox>
-                  <p>There are unsaved changes!</p>
-                  <SWarningButtonContainer>
-                    <SLinkContainer>
-                      <Link to={`/portfolio/${activeLink}`}
-                        onClick={_ => setRemind(false)}
-                      >
-                        I don't care, proceed!
-                      </Link>
-                    </SLinkContainer>
-                    <SWarningButton onClick={_ => uploadPropertyValues()}>Save</SWarningButton>
-                  </SWarningButtonContainer>
-                </SReminderBox>
-              </OutsideClickHandler>
-            </SReminderScreen>
-          }
           {pg.next && // -> prevent unneccesary render
             <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
           }
         </SSlide>
       </SSlideContainer>
+      {remind &&
+        <SReminderScreen>
+          <OutsideClickHandler
+            onOutsideClick={_ => setRemind(false)}
+          >
+            <SReminderBox>
+              <p>There are unsaved changes!</p>
+              <SWarningButtonContainer>
+                <SLinkContainer>
+                  <Link to={`/portfolio/${activeLink}`}
+                    onClick={_ => setRemind(false)}
+                  >
+                    I don't care, proceed!
+                      </Link>
+                </SLinkContainer>
+                <SWarningButton onClick={_ => uploadPropertyValues()}>Save</SWarningButton>
+              </SWarningButtonContainer>
+            </SReminderBox>
+          </OutsideClickHandler>
+        </SReminderScreen>
+      }
     </SPageContainer>
   )
 }
