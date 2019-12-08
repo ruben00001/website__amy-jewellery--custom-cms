@@ -38,8 +38,11 @@ const ImageNav = memo(({ previousPage, nextPage, unsavedChange, remindToSave }) 
           previous page
         </Link>
       </SSlideLink>
-      <SSlideLink>
-        <Link style={{ pointerEvents: 'none' }}
+      <SSlideLink
+        onClick={_ => remindToSave('next')}
+      >
+        {/* <Link style={{ pointerEvents: 'none' }} */}
+        <Link style={unsavedChange ? { pointerEvents: 'none' } : null}
           to={`/portfolio/${nextPage}`}
         >
           next page

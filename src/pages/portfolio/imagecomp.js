@@ -8,12 +8,16 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const SInfo = styled.div`
   position: absolute;
-  top: 5px;
-  left: 5px;
+  top: -20px;
+  /* left: 5px; */
+  height: 20px;
+  padding: 4px;
   z-index: 10;
   cursor: pointer;
   display: flex;
   align-items: center;
+  background-color: white;
+  /* border: 1px solid black; */
 `
 
 const SSelect = styled.select`
@@ -58,7 +62,7 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSiz
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
       onDragStop={(e, d) => {
-        console.log('ONDRAGSTOP:', d.x, d.y);
+        // console.log('ONDRAGSTOP:', d.x, d.y);
         setState({ ...state, x: d.x, y: d.y });
         updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
         updateUnsavedChange();
