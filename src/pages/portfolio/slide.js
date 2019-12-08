@@ -14,6 +14,7 @@ const SPageContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
+  background-color: #f9f9f9;
 `
 
 const SSlideControl = styled.div`
@@ -21,6 +22,7 @@ const SSlideControl = styled.div`
   justify-content: space-around;
   padding-top: 20px;
   padding-bottom: 20px;
+  /* margin-bottom: 20px; */
   background-color: white;
   border-bottom: 1px solid #d9d9d9;
   font-family: 'Roboto', sans-serif;
@@ -119,7 +121,6 @@ const SSlideContainer = styled.div`
   justify-content: center;
   align-items: center;
   flex: 1;
-  background-color: #f9f9f9;
   /* border: 1px solid yellow; */
 `
 
@@ -176,8 +177,8 @@ const SReminderBox = styled.div`
 
 function Slide({ slideData, setToggle, toggle }) {
 
-  const [windowSize, setWindowSize] = useState({ width: null, height: null });
   const [device, setDevice] = useState({ width: 1920, height: 1600 });
+  const [windowSize, setWindowSize] = useState({ width: null, height: null });
   const [imgsValues, setImgsValues] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [elementsDone, setElementsDone] = useState(false); // prevents re-triggering of creation of image elements on imgsValue change
@@ -197,8 +198,13 @@ function Slide({ slideData, setToggle, toggle }) {
   }, [slideData]);
 
   useEffect(_ => {
-    const width = window.innerWidth * .95 - 2;
-    const height = (width + 2) * (device.height / device.width) - 2;
+    let width = window.innerWidth * .95 - 2;
+    let height = (width + 2) * (device.height / device.width) - 2;
+
+    if(height > window.innerHeight - 86) { // 86 = height of control panel + margin
+      height = window.innerHeight * 0.9 - 2; // 20 = margin
+      width = (height + 2) * (device.width / device.height) - 2;
+    }
 
     setWindowSize({ width: width, height: height });
   }, [slideData]);
@@ -218,9 +224,9 @@ function Slide({ slideData, setToggle, toggle }) {
       console.log('IMG DEFAULT VALUES SET. PG IMGS:', pgImgs)
       const getIndexOfPropertyForScreenWidth = (img, property) => {
         const values = img[property].map(size => size.screen);
-        const valuesSorted = img[property].map(size => size.screen).sort((a, b) => b - a);
+        const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
         for (let i = 0; i < valuesSorted.length; i++) {
-          if (device.width >= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
+          if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
         }
       }
 
@@ -246,6 +252,15 @@ function Slide({ slideData, setToggle, toggle }) {
           (percent * windowSize.height) / 100;
       }
 
+      const updateUnsavedChange = _ => {
+        setUnsavedChange(!unsavedChange);
+      }
+
+      const updateNumError = _ => {
+        setNumError(false);
+      }
+
+
       const imgs = pgImgs.map((img, i) => {
 
         const updateImgValues = (x, y, width) => {
@@ -266,14 +281,6 @@ function Slide({ slideData, setToggle, toggle }) {
 
             return arr;
           });
-        }
-
-        const updateUnsavedChange = _ => {
-          setUnsavedChange(!unsavedChange);
-        }
-
-        const updateNumError = _ => {
-          setNumError(false);
         }
 
         return (

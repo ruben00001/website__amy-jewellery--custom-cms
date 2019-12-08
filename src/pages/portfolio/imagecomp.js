@@ -63,7 +63,7 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSiz
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
       onDragStop={(e, d) => {
-        // console.log('ONDRAGSTOP:', d.x, d.y);
+        console.log('ONDRAGSTOP:', d.x, d.y);
         setState({ ...state, x: d.x, y: d.y });
         updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
         updateUnsavedChange();
