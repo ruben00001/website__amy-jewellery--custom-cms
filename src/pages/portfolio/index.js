@@ -1,42 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, Link } from 'react-router-dom';
 import axios from 'axios';
+import OutsideClickHandler from 'react-outside-click-handler';
 import styled from 'styled-components';
-import Draggable from 'react-draggable';
-import ImageComp from './imagecomp';
-import Navbar from '../../components/navbar'
-import ImageNav from './imagenav';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faSave, faTimesCircle, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Slide from './slide';
 
 
 const SSlide_Container = styled.div`
   position: relative;
-  width: 60%;
+  width: 100%;
   height: ${props => `${props.height}px`};
-  margin: 30px auto;
+  /* margin: 30px auto; */
   overflow: hidden;
   border: 2px solid black;
 `
 
-const SSlide_Num = styled.h2`
+const SPageControl = styled.div`
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: -36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
   font-family: 'Roboto', sans-serif;
-  font-size: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
 `
+
+const SSelect = styled.select`
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+`
+
+const SSaveWarningContainer = styled.div`
+  position: absolute;
+  bottom: -120px;
+  left: -190px;
+  /* right: 20px; */
+  z-index: 10;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px;
+  border: 1px solid #D93025;
+  font-family: 'Roboto', sans-serif;
+  font-size: 13px;
+  padding: 8px 15px;
+  border-radius: 3px;
+`
+
+const SSaveWarningMessage = styled.p`
+  text-align: center;
+`
+
 
 export default function Portfolio() {
 
   let { path, url } = useRouteMatch();
 
-  // console.log('====================================');
-  // console.log(path);
-  // console.log('====================================');
-
   const [toggle, set] = useState(false);
   const [slideData, setSlideData] = useState([]);
   const [imgElements, setImgElements] = useState([]);
+  const [nums, setNums] = useState([]);
+  const [numError, setNumError] = useState(false);
 
   useEffect(_ => { // PULL DATA FROM STRAPI CMS AND COLLATE
 
@@ -50,6 +80,7 @@ export default function Portfolio() {
       .then(response => {
 
         slides = response.data.map(slide => {
+
           return {
             id: slide.id,
             num: slide.num,
@@ -62,6 +93,12 @@ export default function Portfolio() {
             })
           }
         });
+
+        let numArr = [];
+        slides.forEach((slide, i) => {
+          numArr.push(i + 1);
+        });
+        setNums(numArr);
 
         axios.get('http://localhost:1337/images')
           .then(response => {
@@ -93,6 +130,7 @@ export default function Portfolio() {
               }
             });
             // console.log('slides:', slides);
+            slides.sort((a, b) => a.num - b.num);
             setSlideData(slides);
           })
       })
@@ -100,30 +138,33 @@ export default function Portfolio() {
 
   useEffect(_ => { // CREATE IMGS ELEMENTS
     if (slideData[0]) {
+      // console.log('====================================');
+      // console.log('CREATING IMG ELEMENTS');
+      // console.log('====================================');
+      // console.log('slideData', slideData);
       const slideImgs = [];
 
-      const setMqPropertyIndex = (image, property, screenWidth) => {
-        const values = image[property].map(size =>
-          size.screen
-        );
-        for (let i = 0; i < values.length; i++) {
-          if (screenWidth >= values[i] || !values[i + 1]) return i // *** check this works
+      const getIndexOfPropertyForScreenWidth = (img, property) => {
+        const values = img[property].map(size => size.screen);
+        const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
+        for (let i = 0; i < valuesSorted.length; i++) {
+          if (1920 <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]);
         }
       }
 
-      slideData.forEach(slide => {
+      slideData.forEach((slide, i) => {
         const imgs = slide.imgs.map((image, j) => {
 
-          const mqWidthsWidthIndex = setMqPropertyIndex(image, 'widths', 1920);
-          const mqPositionsWidthIndex = setMqPropertyIndex(image, 'positions', 1920);
+          const mqWidthsWidthIndex = getIndexOfPropertyForScreenWidth(image, 'widths');
+          const mqPositionsWidthIndex = getIndexOfPropertyForScreenWidth(image, 'positions');
 
           return (
             <img src={`http://localhost:1337${image.url}`}
               style={{
                 position: 'absolute',
-                width: `${image.widths[0] ? image.widths[mqWidthsWidthIndex].width : 30}%`, // ** change these (no ternary needed)
-                top: image.positions[0] ? image.positions[mqPositionsWidthIndex].y : 30,
-                left: image.positions[0] ? image.positions[mqPositionsWidthIndex].x : 30
+                width: image.widths[0] ? `${image.widths[mqWidthsWidthIndex].width}%` : '30%',
+                top: image.positions[0] ? `${image.positions[mqPositionsWidthIndex].y}%` : '30%',
+                left: image.positions[0] ? `${image.positions[mqPositionsWidthIndex].x}%` : '30%'
               }}
               key={j}
             />
@@ -137,61 +178,144 @@ export default function Portfolio() {
 
 
   const setToggle = () => {
-    console.log('TOGGLE');
-
     set(!toggle);
   }
 
   const addPage = () => {
     axios.post("http://localhost:1337/slides", { num: slideData.length + 1 })
       .then(res => {
-        // console.log(res.data);
+        console.log(res.data);
         setToggle();
       })
   }
 
+  const deletePage = (index) => {
 
+    const promises = [];
+
+    slideData[index].imgs.forEach(img => {
+      const widthPromises = img.widths.map(width =>
+        axios.delete(`http://localhost:1337/widths/${width.id}`)
+      );
+      promises.push(widthPromises);
+
+      const positionPromises = img.positions.map(position =>
+        axios.delete(`http://localhost:1337/positions/${position.id}`)
+      );
+      promises.push(positionPromises);
+
+      const imgPromise = axios.delete(`http://localhost:1337/images/${img.id}`);
+      promises.push(imgPromise);
+    });
+
+    promises.push(axios.delete(`http://localhost:1337/slides/${slideData[index].id}`));
+
+    Promise.all(promises)
+      .then(axios.spread((...responses) => {
+        console.log('responses:', responses);
+        setToggle();
+      }));
+  }
+
+  const updateNums = (index, value) => {
+    setNums(nums => {
+      const arr = [...nums];
+      arr[index] = Number(value);
+
+      return arr;
+    })
+  }
+
+  const uploadNums = _ => {
+
+    const promises = [];
+
+    nums.forEach((num, i) => {
+      if (num !== i + 1) {
+        let promise = axios.put(`http://localhost:1337/slides/${slideData[i].id}`, { num: num });
+        promises.push(promise);
+      }
+    });
+
+    Promise.all(promises)
+      .then(axios.spread((...responses) => {
+        console.log('responses:', responses);
+        setToggle();
+      }));
+  }
+
+  const handleSave = _ => {
+    const arr = [...nums].sort();
+
+    for (let i = 0; i < arr.length - 1; i++) {
+      if (arr[i] === arr[i + 1]) {
+        setNumError(true);
+        return;
+      }
+    }
+    uploadNums();
+  }
 
 
   return (
     <>
       <Switch>
         <Route exact path={path}>
-          <div>
-            <h2>Portfolio Home</h2>
+          <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
+            <div style={{ position: 'absolute', top: '20px', left: '20px' }}>
+              <FontAwesomeIcon icon={faPlus} style={{ fontSize: '30px', cursor: 'pointer' }} onClick={_ => addPage()} />
+              <p style={{ marginTop: '8px' }}>Add Page</p>
+            </div>
+            <div style={{ position: 'absolute', right: '20px', top: '20px', textAlign: 'right' }}>
+              <FontAwesomeIcon icon={faSave}
+                style={{ fontSize: '30px', cursor: 'pointer' }}
+                onClick={_ => handleSave()}
+              />
+              <p style={{ marginTop: '8px' }}>(save after <br /> changing <br /> slide order)</p>
+              {numError &&
+                <OutsideClickHandler
+                  onOutsideClick={_ => setNumError(false)}
+                >
+                  <SSaveWarningContainer>
+                    <FontAwesomeIcon icon={faTimesCircle}
+                      style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
+                    />
+                    <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
+                  </SSaveWarningContainer>
+                </OutsideClickHandler>
+              }
+            </div>
             {
               slideData[0] &&
               slideData.map((slide, i) => {
                 return (
-                  <Link to={`${url}/${i}`} key={i}>
-                    <SSlide_Container height={(window.innerWidth * 0.6) * 1200 / 1920} key={i}>
-                      <SSlide_Num>{i + 1}</SSlide_Num>
-                      {imgElements[i]}
-                    </SSlide_Container>
-                  </Link>
-                )
+                  <div style={{ position: 'relative', width: '60%', margin: '0 auto 100px auto' }} key={i}>
+                    <SPageControl>
+                      {/* <SSlide_Num>{i + 1}</SSlide_Num> */}
+                      <SSelect value={nums[i]}
+                        onChange={e => updateNums(i, e.target.value)}
+                        // onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }}
+                        onClick={_ => setNumError(false)}
+                      >
+                        {slideData.map((slide, i) =>
+                          <option value={i + 1} key={i}>{i + 1}</option>
+                        )}
+                      </SSelect>
+                      <FontAwesomeIcon icon={faTrash}
+                        style={{ fontSize: '20px', cursor: 'pointer' }}
+                        onClick={_ => deletePage(i)}
+                      />
+                    </SPageControl>
+                    <Link to={`${url}/${i}`} key={i}>
+                      <SSlide_Container height={(window.innerWidth * 0.6) * 1200 / 1920} key={i} >
+                        {imgElements[i]}
+                      </SSlide_Container>
+                    </Link>
+                  </div>
+                );
               })
-
-              // imgElements.map((slide, i) => 
-              //   <SSlide_Container>
-              //     {slide[i]}
-              //   </SSlide_Container>
-              // )
-              // <img style={{ position: 'absolute', width: `${slideData[0].imgs[0].widths[0].width}%` }} src={`http://localhost:1337${slideData[0].imgs[0].url}`}></img>
-              // slideData[0].imgs.map(img => 
-              //   <img style={{position: 'absolute', width: img.widths[0].width, top: img.positions[0].y, left: img.positions[0].x}} src={`http://localhost:1337${img.url}`}></img>
-              // ) 
             }
-            {/* <div>
-              {
-                slideData.map((slide, i) =>
-                  <Link to={`${url}/${i}`}>Slide {i + 1}</Link>
-                )
-              }
-            </div> */}
-            <h3 onClick={_ => addPage()}>Add Page</h3>
           </div>
-
         </Route>
         {slideData[0] &&
           <Route path={`${path}/:slideId`}>

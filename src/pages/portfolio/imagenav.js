@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -23,8 +23,7 @@ const SSlideLink = styled.div`
 `
 
 
-const ImageNav = memo(({ previousPage, nextPage, unsavedChange, remindToSave }) => {
-
+function ImageNav ({ previousPage, nextPage, unsavedChange, remindToSave }) {
 
   return (
     <SSlideLinkContainer>
@@ -50,6 +49,6 @@ const ImageNav = memo(({ previousPage, nextPage, unsavedChange, remindToSave }) 
       </SSlideLink>
     </SSlideLinkContainer>
   )
-})
+}
 
 export default ImageNav;

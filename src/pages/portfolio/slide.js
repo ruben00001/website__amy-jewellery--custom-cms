@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpload, faSave, faTimesCircle } from "@fortawesome/free-solid-svg-icons";
+import { faUpload, faSave, faTimesCircle, faHome } from "@fortawesome/free-solid-svg-icons";
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
@@ -19,10 +19,9 @@ const SPageContainer = styled.div`
 
 const SSlideControl = styled.div`
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding: 20px;
   background-color: white;
   border-bottom: 1px solid #d9d9d9;
   border-right: 1px solid #d9d9d9;
@@ -263,15 +262,15 @@ function Slide({ slideData, setToggle, toggle }) {
     }
   }, [slideData, device, deviceScale]);
 
-  useEffect(_ => {
-    if (windowSize.width) {
-      console.log('windowSize:', windowSize)
-    }
-  }, [windowSize]);
+  // useEffect(_ => {
+  //   if (windowSize.width) {
+  //     console.log('windowSize:', windowSize)
+  //   }
+  // }, [windowSize]);
 
-  useEffect(_ => {
-    console.log('deviceScale:', deviceScale)
-  }, [deviceScale])
+  // useEffect(_ => {
+  //   console.log('deviceScale:', deviceScale)
+  // }, [deviceScale])
 
 
   //________________________________________________________________________________
@@ -474,9 +473,6 @@ function Slide({ slideData, setToggle, toggle }) {
     const positionIds = pgImgs[index].positions.map(position => position.id);
     const widthIds = pgImgs[index].widths.map(width => width.id);
 
-    console.log('positionIds:', positionIds);
-    console.log('widthIds:', widthIds)
-
     const promises = [];
 
     positionIds.forEach(id => {
@@ -588,6 +584,7 @@ function Slide({ slideData, setToggle, toggle }) {
     <SPageContainer scale={deviceScale}>
       <SSlideControl>
         <SDevice>
+          <Link to='/portfolio' style={{ marginRight: '130px', fontSize: '24px', color: '#FFD753' }}><FontAwesomeIcon icon={faHome} /></Link>
           <div style={{ position: 'relative' }} >
             <SDeviceLabel htmlFor="device"
               onClick={_ => unsavedChange ? remindToSave('device') : null}
@@ -605,12 +602,10 @@ function Slide({ slideData, setToggle, toggle }) {
             </SSelect>
           </div>
           <SCheckBox>
-            {/* <SCheckBox onClick={_ => unsavedChange ? setRemind(true) : null}> */}
             <p>To Scale</p>
             <div>
               <input type='checkbox' id='scale' value='Fit to page'
                 onChange={_ => updateScale()}
-                // onClick={_ => setRemind(true)}
                 disabled={unsavedChange ? true : false}
               />
               <label htmlFor="scale"
@@ -621,12 +616,7 @@ function Slide({ slideData, setToggle, toggle }) {
         </SDevice>
         <div>
           <form id='form' onSubmit={e => uploadImage(e)} style={{ position: "relative" }}>
-            {/* <div style={{ position: "absolute", left: "-94px" }}>
-              <label htmlFor="upload" style={{ marginRight: "15px" }}>Add Image:</label>
-              <FontAwesomeIcon icon={faUpload} id="upload" />
-            </div> */}
             <SImageInput type="file" name="files" id="file"
-              // onChange={e => console.log(e.target.value.match(/[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))/g))}
               onChange={e => setFile(e.target.value.match(/[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))/g))}
             />
             <SImageLabel htmlFor="file">
@@ -658,14 +648,12 @@ function Slide({ slideData, setToggle, toggle }) {
       <SSlideContainer scale={deviceScale}>
         <SDimensions>{`${device.width} x ${device.height}`}</SDimensions>
         <SSlide width={windowSize.width} height={windowSize.height} deviceScale={deviceScale}>
-          <Navbar />
+          <Navbar windowWidth={windowSize.width} scale={deviceScale} />
           {/* <h1 style={{ zIndex: 100 }} onClick={_ => test()}>Test</h1> */}
           <SImagesContainer>
             {imgElements}
           </SImagesContainer>
-          {pg.next && // -> prevent unneccesary render
-            <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
-          }
+          <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
         </SSlide>
       </SSlideContainer>
       {remind &&

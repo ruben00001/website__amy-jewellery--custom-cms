@@ -11,9 +11,9 @@ const SNavbar = styled.div`
   display: flex;
   justify-content: space-between;
   width: 98%;
-  margin: 1vh auto 20px auto;
+  margin-top: 5px;
   font-family: 'EB Garamond', sans-serif;
-  font-size: 26px;
+  font-size: ${props => props.width < 500 ? '18px' : '24px'};
 `;
 
 const SPageLink = styled.div`
@@ -21,10 +21,10 @@ const SPageLink = styled.div`
   text-decoration: none;
 `
 
-const Navbar = memo(() => {
+const Navbar = memo(({windowWidth, scale}) => {
 
   return (
-    <SNavbar>
+    <SNavbar width={windowWidth} scale={scale}>
       <SPageLink className='hello'>
         amy rodriguez
       </SPageLink>
