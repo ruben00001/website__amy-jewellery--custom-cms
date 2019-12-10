@@ -24,7 +24,6 @@ function App() {
 
   return (
     <Router>
-      {/* <h1 onClick={_ => console.log(preloadedImages)}>App.js</h1> */}
       <Switch>
         <Route exact path="/" render={_ =>
           <Login storeJwtTokenAtRoot={storeJwtTokenAtRoot} />
@@ -35,38 +34,11 @@ function App() {
         <Route path="/reset-password" render={_ =>
           <ResetPassword />
         } />
-        <Route path="/portfolio" render={_ =>
-          <Portfolio />
-        } />
-        
-        {/* {
-          // jwtToken &&
-          images.map((portfolio_slide, i) =>
-            <Route key={i} path={`/portfolio_slide_${i}`} render={_ =>
-              <Portfolio
-                images={images}
-                page={i}
-                preloadedImages={preloadedImages}
-                updatePreloadedImages={updatePreloadedImages}
-              />}
-            />
-          )
-        } */}
-
-        {/* {
-          images.slice(1).map((portfolio_slide, i) =>
-            <Route key={i} path={`/portfolio_slide_${i + 1}`} render={_ =>
-              <Portfolio
-                images={images}
-                page={i + 1}
-                preloadedImages={preloadedImages}
-                updatePreloadedImages={updatePreloadedImages}
-              />}
-            />
-          )
-        } */}
-        <Route path="/contact" component={Contact} />
-        <Route path="/shop" component={Shop} />
+        <Route path="/portfolio">
+          <Portfolio jwtToken={jwtToken} />
+        </Route>
+        {/* <Route path="/contact" component={Contact} />
+        <Route path="/shop" component={Shop} /> */}
       </Switch>
     </Router>
   );

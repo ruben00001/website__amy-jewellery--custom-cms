@@ -58,9 +58,7 @@ const SSaveWarningMessage = styled.p`
 `
 
 
-export default function Portfolio() {
-
-  let { path, url } = useRouteMatch();
+export default function Portfolio({ jwtToken }) {
 
   const [toggle, set] = useState(false);
   const [slideData, setSlideData] = useState([]);
@@ -68,7 +66,12 @@ export default function Portfolio() {
   const [nums, setNums] = useState([]);
   const [numError, setNumError] = useState(false);
 
-  useEffect(_ => { // PULL DATA FROM STRAPI CMS AND COLLATE
+  let { path, url } = useRouteMatch();
+
+  //________________________________________________________________________________
+  // PULL DATA FROM STRAPI CMS AND COLLATE
+
+  useEffect(_ => {
 
     console.log('====================================');
     console.log('API CALL MADE');
@@ -136,7 +139,11 @@ export default function Portfolio() {
       })
   }, [toggle]);
 
-  useEffect(_ => { // CREATE IMGS ELEMENTS
+
+  //________________________________________________________________________________
+  // CREATE ELEMENTS
+
+  useEffect(_ => {
     if (slideData[0]) {
       // console.log('====================================');
       // console.log('CREATING IMG ELEMENTS');
@@ -177,12 +184,20 @@ export default function Portfolio() {
   }, [slideData]);
 
 
+  //________________________________________________________________________________
+  // HANDLE DATA CHANGE & UPLOADS
+
+
   const setToggle = () => {
     set(!toggle);
   }
 
   const addPage = () => {
-    axios.post("http://localhost:1337/slides", { num: slideData.length + 1 })
+    axios.post("http://localhost:1337/slides", { num: slideData.length + 1 }, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`
+      }
+    })
       .then(res => {
         console.log(res.data);
         setToggle();
@@ -195,20 +210,36 @@ export default function Portfolio() {
 
     slideData[index].imgs.forEach(img => {
       const widthPromises = img.widths.map(width =>
-        axios.delete(`http://localhost:1337/widths/${width.id}`)
+        axios.delete(`http://localhost:1337/widths/${width.id}`, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
+        })
       );
       promises.push(widthPromises);
 
       const positionPromises = img.positions.map(position =>
-        axios.delete(`http://localhost:1337/positions/${position.id}`)
+        axios.delete(`http://localhost:1337/positions/${position.id}`, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
+        })
       );
       promises.push(positionPromises);
 
-      const imgPromise = axios.delete(`http://localhost:1337/images/${img.id}`);
+      const imgPromise = axios.delete(`http://localhost:1337/images/${img.id}`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`
+        }
+      });
       promises.push(imgPromise);
     });
 
-    promises.push(axios.delete(`http://localhost:1337/slides/${slideData[index].id}`));
+    promises.push(axios.delete(`http://localhost:1337/slides/${slideData[index].id}`, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`
+      }
+    }));
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
@@ -232,7 +263,11 @@ export default function Portfolio() {
 
     nums.forEach((num, i) => {
       if (num !== i + 1) {
-        let promise = axios.put(`http://localhost:1337/slides/${slideData[i].id}`, { num: num });
+        let promise = axios.put(`http://localhost:1337/slides/${slideData[i].id}`, { num: num }, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
+        });
         promises.push(promise);
       }
     });
@@ -256,17 +291,22 @@ export default function Portfolio() {
     uploadNums();
   }
 
+  useEffect(_ => {
+    console.log('path:', path)
+    console.log('url:', url)
+  }, [path])
+
 
   return (
     <>
       <Switch>
         <Route exact path={path}>
           <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
-            <div style={{ position: 'absolute', top: '20px', left: '20px' }}>
+            <div style={{ position: 'fixed', top: '20px', left: '20px' }}>
               <FontAwesomeIcon icon={faPlus} style={{ fontSize: '30px', cursor: 'pointer' }} onClick={_ => addPage()} />
               <p style={{ marginTop: '8px' }}>Add Page</p>
             </div>
-            <div style={{ position: 'absolute', right: '20px', top: '20px', textAlign: 'right' }}>
+            <div style={{ position: 'fixed', right: '20px', top: '20px', textAlign: 'right' }}>
               <FontAwesomeIcon icon={faSave}
                 style={{ fontSize: '30px', cursor: 'pointer' }}
                 onClick={_ => handleSave()}
@@ -289,12 +329,10 @@ export default function Portfolio() {
               slideData[0] &&
               slideData.map((slide, i) => {
                 return (
-                  <div style={{ position: 'relative', width: '60%', margin: '0 auto 100px auto' }} key={i}>
+                  <div style={{ position: 'relative', width: '60%', paddingBottom: '100px', margin: '0 auto' }} key={i}>
                     <SPageControl>
-                      {/* <SSlide_Num>{i + 1}</SSlide_Num> */}
                       <SSelect value={nums[i]}
                         onChange={e => updateNums(i, e.target.value)}
-                        // onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }}
                         onClick={_ => setNumError(false)}
                       >
                         {slideData.map((slide, i) =>
@@ -318,19 +356,12 @@ export default function Portfolio() {
           </div>
         </Route>
         {slideData[0] &&
-          <Route path={`${path}/:slideId`}>
-            <Slide slideData={slideData} setToggle={setToggle} toggle={toggle} />
-            {/* <Slide slideData={slideData} imgElements={<div>Hello</div>} /> */}
-          </Route>
-          // imgElements.map((slide, i) => {
-          //   console.log('slide:', slide)
-          //   return <Route path={`${path}/:slideId`}>
-          //     <Slide imgElements={slide} page={i} />
-          //   </Route>
-          // })
+          <Route path={`${path}/:slideId`}
+            component={_ => <Slide slideData={slideData} setToggle={setToggle} toggle={toggle} jwtToken={jwtToken} />}
+          />
         }
-
       </Switch>
     </>
   );
 }
+

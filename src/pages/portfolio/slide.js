@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, withRouter } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
@@ -218,7 +218,7 @@ const SReminderBox = styled.div`
 
 
 
-function Slide({ slideData, setToggle, toggle }) {
+function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
   const [device, setDevice] = useState({ width: 1920, height: 1200 });
   const [deviceScale, setDeviceScale] = useState(0);
@@ -292,10 +292,10 @@ function Slide({ slideData, setToggle, toggle }) {
 
       pgImgs.map(img => {
         const position = {
-          x: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x : 10,
-          y: img.positions[0] ? img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y : 10
+          x: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x,
+          y: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y
         };
-        const width = img.widths[0] ? img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width : 30;
+        const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
 
         setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
       });
@@ -371,11 +371,20 @@ function Slide({ slideData, setToggle, toggle }) {
     }
   }, [imgsValues]);
 
+  useEffect(_ => {
+    console.log('imgsValues WATCH:', imgsValues)
+  }, [imgsValues])
+
 
   //________________________________________________________________________________
   // HANDLE API CALLS
 
+  useEffect(_ => {
+    console.log('jwtToken:', jwtToken)
+  }, [jwtToken])
+
   const reset = () => {
+    setUnsavedChange(false);
     setImgsValues([]);
     setElementsDone(false);
     setToggle(!toggle);
@@ -402,12 +411,22 @@ function Slide({ slideData, setToggle, toggle }) {
             property === 'widths' ?
               { screenwidth: device.width, width: imgsValues[i].width } :
               { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }
+            , {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`
+              }
+            }
           )
         } else {
           promise = axios.post(`http://localhost:1337/${property}`,
             property === 'widths' ?
               { screenwidth: device.width, width: imgsValues[i].width, image: img.id } :
               { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y, image: img.id }
+            , {
+              headers: {
+                Authorization: `Bearer ${jwtToken}`
+              }
+            }
           )
         }
         promises.push(promise);
@@ -416,15 +435,19 @@ function Slide({ slideData, setToggle, toggle }) {
       sendData('widths');
       sendData('positions');
 
-      const numPromise = axios.put(`http://localhost:1337/images/${img.id}`, { num: imgsValues[i].num });
+      const numPromise = axios.put(`http://localhost:1337/images/${img.id}`, { num: imgsValues[i].num }, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`
+        }
+      });
       promises.push(numPromise);
     });
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
-        if (responses.length === pgImgs.length * 3) {
-          reset();
-        }
+        console.log('responses:', responses);
+        setRemind(false);
+        reset();
       }));
   }
 
@@ -447,22 +470,47 @@ function Slide({ slideData, setToggle, toggle }) {
     formData.append('ref', 'image');
     formData.append('field', 'image');
 
-    axios.post("http://localhost:1337/images", { num: pgImgs.length + 1, slide: slideData[pgCurrent].id })
+    axios.post("http://localhost:1337/images", { num: pgImgs.length + 1, slide: slideData[pgCurrent].id }, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`
+      }
+    })
       .then(res => {
         console.log(res);
+        const promises = [];
+
+        promises.push(
+          axios.post(`http://localhost:1337/widths`, { screenwidth: 1920, width: 30, image: res.data.id }, {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`
+            }
+          })
+        );
+        promises.push(
+          axios.post(`http://localhost:1337/positions`, { screenwidth: 1920, x: 30, y: 30, image: res.data.id }, {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`
+            }
+          })
+        );
 
         formData.append('refId', res.data.id);
 
-        axios.post(`http://localhost:1337/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
-          .then(res => {
-            console.log(res);
-            reset();
-          })
-          .catch(err => {
-            console.log(err);
-          });
+        Promise.all(promises)
+          .then(axios.spread((...responses) => {
+            console.log('responses:', responses);
+
+            axios.post(`http://localhost:1337/upload`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            })
+              .then(res => {
+                console.log(res);
+                reset();
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }));
       })
       .catch(err => {
         console.log(err);
@@ -476,12 +524,24 @@ function Slide({ slideData, setToggle, toggle }) {
     const promises = [];
 
     positionIds.forEach(id => {
-      promises.push(axios.delete(`http://localhost:1337/positions/${id}`));
+      promises.push(axios.delete(`http://localhost:1337/positions/${id}`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`
+        }
+      }));
     });
     widthIds.forEach(id => {
-      promises.push(axios.delete(`http://localhost:1337/widths/${id}`));
+      promises.push(axios.delete(`http://localhost:1337/widths/${id}`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`
+        }
+      }));
     });
-    promises.push(axios.delete(`http://localhost:1337/images/${pgImgs[index].id}`));
+    promises.push(axios.delete(`http://localhost:1337/images/${pgImgs[index].id}`, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`
+      }
+    }));
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
@@ -502,7 +562,11 @@ function Slide({ slideData, setToggle, toggle }) {
 
         const promises = [];
         imgIdsSorted.forEach((id, i) => {
-          promises.push(axios.put(`http://localhost:1337/images/${id}`, { num: i + 1 }));
+          promises.push(axios.put(`http://localhost:1337/images/${id}`, { num: i + 1 }, {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`
+            }
+          }));
         });
 
         Promise.all(promises)
@@ -618,8 +682,11 @@ function Slide({ slideData, setToggle, toggle }) {
           <form id='form' onSubmit={e => uploadImage(e)} style={{ position: "relative" }}>
             <SImageInput type="file" name="files" id="file"
               onChange={e => setFile(e.target.value.match(/[^/\\&\?]+\.\w{3,4}(?=([\?&].*$|$))/g))}
+              disabled={unsavedChange ? true : false}
             />
-            <SImageLabel htmlFor="file">
+            <SImageLabel htmlFor="file"
+              onClick={_ => unsavedChange ? remindToSave('device') : null}
+            >
               {file ? file[0] : <><FontAwesomeIcon icon={faUpload} id="upload" style={{ marginRight: '8px' }} /> Add Image</>}
             </SImageLabel>
             {file ? <SImageSubmit type="submit" value="Submit" /> : null}
@@ -688,7 +755,7 @@ function Slide({ slideData, setToggle, toggle }) {
   )
 }
 
-export default Slide;
+export default withRouter(Slide);
 
     // const initialNums = pgImgs.map(img => img.num);
 
