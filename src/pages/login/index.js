@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { Global } from '../../environment/global';
 
 
 const SFormContainer = styled.div`
@@ -21,11 +22,6 @@ const Title = styled.h1`
 const SForm = styled.form`
   display: flex;
   flex-direction: column;
-  /* justify-content: center;
-  height: 500px;
-  padding: 0 40px;
-  border: 1px solid #DADCE0;
-  border-radius: 8px; */
 `
 
 const SInput = styled.input`
@@ -99,6 +95,8 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
 
   const history = useHistory();
 
+  const strapiURL = Global.strapiURL;
+
   useEffect(_ => {
     storeJwtTokenAtRoot(token)
   }, [token]);
@@ -107,7 +105,7 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
     axios
-      .post('http://localhost:1337/auth/local', {
+      .post(`${strapiURL}/auth/local`, {
         identifier: form.elements.email.value,
         password: form.elements.password.value
       })
@@ -135,8 +133,8 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
       <SForm onSubmit={authenticateLogIn}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="email" name="email" placeholder="email"
-          onChange={e => setEmail(e.target.value) }
-          onKeyDown={_ => logInError ? setLogInError(false) : null }
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={_ => logInError ? setLogInError(false) : null}
           logInError={logInError}
         />
         <SInput type="password" name="password" placeholder="password"

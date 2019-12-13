@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faSave, faTimesCircle, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Slide from './slide';
+import { Global } from '../../environment/global';
 
 
 const SSlide_Container = styled.div`
@@ -68,6 +69,9 @@ export default function Portfolio({ jwtToken }) {
 
   let { path, url } = useRouteMatch();
 
+  const strapiURL = Global.strapiURL;
+
+
   //________________________________________________________________________________
   // PULL DATA FROM STRAPI CMS AND COLLATE
 
@@ -79,7 +83,7 @@ export default function Portfolio({ jwtToken }) {
 
     let slides;
 
-    axios.get('http://localhost:1337/slides')
+    axios.get(`${strapiURL}/slides`)
       .then(response => {
 
         slides = response.data.map(slide => {
@@ -103,7 +107,7 @@ export default function Portfolio({ jwtToken }) {
         });
         setNums(numArr);
 
-        axios.get('http://localhost:1337/images')
+        axios.get(`${strapiURL}/images`)
           .then(response => {
             response.data.forEach(image => {
               const imgWidths = image.widths.map(imgWidth => {
@@ -132,8 +136,9 @@ export default function Portfolio({ jwtToken }) {
                 }
               }
             });
-            // console.log('slides:', slides);
+
             slides.sort((a, b) => a.num - b.num);
+            console.log('slides:', slides)
             setSlideData(slides);
           })
       })
@@ -166,7 +171,8 @@ export default function Portfolio({ jwtToken }) {
           const mqPositionsWidthIndex = getIndexOfPropertyForScreenWidth(image, 'positions');
 
           return (
-            <img src={`http://localhost:1337${image.url}`}
+            <img src={image.url}
+            // <img src={strapiURL.image.url}
               style={{
                 position: 'absolute',
                 width: image.widths[0] ? `${image.widths[mqWidthsWidthIndex].width}%` : '30%',
@@ -193,7 +199,7 @@ export default function Portfolio({ jwtToken }) {
   }
 
   const addPage = () => {
-    axios.post("http://localhost:1337/slides", { num: slideData.length + 1 }, {
+    axios.post(`${strapiURL}/slides`, { num: slideData.length + 1 }, {
       headers: {
         Authorization: `Bearer ${jwtToken}`
       }
@@ -210,7 +216,7 @@ export default function Portfolio({ jwtToken }) {
 
     slideData[index].imgs.forEach(img => {
       const widthPromises = img.widths.map(width =>
-        axios.delete(`http://localhost:1337/widths/${width.id}`, {
+        axios.delete(`${strapiURL}/widths/${width.id}`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`
           }
@@ -219,7 +225,7 @@ export default function Portfolio({ jwtToken }) {
       promises.push(widthPromises);
 
       const positionPromises = img.positions.map(position =>
-        axios.delete(`http://localhost:1337/positions/${position.id}`, {
+        axios.delete(`${strapiURL}/positions/${position.id}`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`
           }
@@ -227,7 +233,7 @@ export default function Portfolio({ jwtToken }) {
       );
       promises.push(positionPromises);
 
-      const imgPromise = axios.delete(`http://localhost:1337/images/${img.id}`, {
+      const imgPromise = axios.delete(`${strapiURL}/images/${img.id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`
         }
@@ -235,7 +241,7 @@ export default function Portfolio({ jwtToken }) {
       promises.push(imgPromise);
     });
 
-    promises.push(axios.delete(`http://localhost:1337/slides/${slideData[index].id}`, {
+    promises.push(axios.delete(`${strapiURL}/slides/${slideData[index].id}`, {
       headers: {
         Authorization: `Bearer ${jwtToken}`
       }
@@ -263,7 +269,7 @@ export default function Portfolio({ jwtToken }) {
 
     nums.forEach((num, i) => {
       if (num !== i + 1) {
-        let promise = axios.put(`http://localhost:1337/slides/${slideData[i].id}`, { num: num }, {
+        let promise = axios.put(`${strapiURL}/slides/${slideData[i].id}`, { num: num }, {
           headers: {
             Authorization: `Bearer ${jwtToken}`
           }
@@ -291,10 +297,6 @@ export default function Portfolio({ jwtToken }) {
     uploadNums();
   }
 
-  useEffect(_ => {
-    console.log('path:', path)
-    console.log('url:', url)
-  }, [path])
 
 
   return (

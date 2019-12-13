@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { Global } from '../../environment/global';
 
 
 const SForm_Container = styled.div`
@@ -105,14 +106,14 @@ export default function ForgotPassword() {
 
   const resetCode = useLocation().search.match(/\=(.*)/);
 
-  console.log('resetCode:', resetCode[1])
+  const strapiURL = Global.strapiURL;
 
   const sendNewPassword = (e) => {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
 
     axios
-      .post('http://localhost:1337/auth/reset-password', {
+      .post(`${strapiURL}/auth/reset-password`, {
         code: resetCode,
         password: form.elements.newpassword.value,
         passwordConfirmation: form.elements.confirm.value

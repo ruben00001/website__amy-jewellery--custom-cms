@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { Global } from '../../environment/global';
 
 
 const SForm_Container = styled.div`
@@ -119,12 +120,13 @@ export default function ForgotPassword() {
   const [emailError, setEmailError] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const strapiURL = Global.strapiURL;
 
   const sendPasswordReset = (e) => {
     e.preventDefault(); // prevents refresh of page on form submit
     const form = e.target;
     axios
-      .post('http://localhost:1337/auth/forgot-password', {
+      .post(`${strapiURL}/auth/forgot-password`, {
         email: form.elements.email.value,
         url:
           'http://localhost:3000/reset-password',
@@ -151,7 +153,7 @@ export default function ForgotPassword() {
           <SInput_Info>Enter email for password recovery</SInput_Info>
           <SInput type="email" name="email"
             defaultValue={useLocation().state.email}
-            onKeyDown={_ => emailError ? setEmailError(false) : null }
+            onKeyDown={_ => emailError ? setEmailError(false) : null}
             emailError={emailError}
             emailSuccess={success}
           />

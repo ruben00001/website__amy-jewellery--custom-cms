@@ -5,6 +5,7 @@ import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload, faSave, faTimesCircle, faHome } from "@fortawesome/free-solid-svg-icons";
+import { Global } from '../../environment/global';
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
@@ -167,7 +168,6 @@ const SSlideContainer = styled.div`
   align-items: center;
   flex: 1;
   padding: ${props => props.scale ? '20px' : 0};
-  /* padding-bottom: ${props => props.scale ? '20px' : 0}; */
 `
 
 const SSlide = styled.div`
@@ -216,8 +216,6 @@ const SReminderBox = styled.div`
 
 
 
-
-
 function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
   const [device, setDevice] = useState({ width: 1920, height: 1200 });
@@ -234,12 +232,13 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
   const [activeLink, setActiveLink] = useState(null);
 
 
+  //________________________________________________________________________________
+  // SET PAGE VARIABLES
+
   const pgCurrent = Number(useParams().slideId);
   const pgImgs = slideData[pgCurrent].imgs;
 
-  // useEffect(_ => {
-  //   console.log('slideData[pgCurrent].imgs:', slideData[pgCurrent].imgs)
-  // }, [slideData]);
+  const strapiURL = Global.strapiURL;
 
   useEffect(_ => {
     if (slideData) {
@@ -261,16 +260,6 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
       setWindowSize({ width: width, height: height });
     }
   }, [slideData, device, deviceScale]);
-
-  // useEffect(_ => {
-  //   if (windowSize.width) {
-  //     console.log('windowSize:', windowSize)
-  //   }
-  // }, [windowSize]);
-
-  // useEffect(_ => {
-  //   console.log('deviceScale:', deviceScale)
-  // }, [deviceScale])
 
 
   //________________________________________________________________________________
@@ -353,7 +342,8 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
             w={`${imgsValues[i].width}%`}
             numImgs={pgImgs.length}
             num={img.num}
-            src={`http://localhost:1337${img.url}`}
+            src={img.url}
+            // src={strapiURL.img.url}
             index={i}
             windowSize={windowSize}
             updateImgValues={updateImgValues}
@@ -371,17 +361,10 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
     }
   }, [imgsValues]);
 
-  useEffect(_ => {
-    console.log('imgsValues WATCH:', imgsValues)
-  }, [imgsValues])
 
 
   //________________________________________________________________________________
   // HANDLE API CALLS
-
-  useEffect(_ => {
-    console.log('jwtToken:', jwtToken)
-  }, [jwtToken])
 
   const reset = () => {
     setUnsavedChange(false);
@@ -407,7 +390,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
         }
 
         if (id) {
-          promise = axios.put(`http://localhost:1337/${property}/${id}`,
+          promise = axios.put(`${strapiURL}/${property}/${id}`,
             property === 'widths' ?
               { screenwidth: device.width, width: imgsValues[i].width } :
               { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }
@@ -418,7 +401,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
             }
           )
         } else {
-          promise = axios.post(`http://localhost:1337/${property}`,
+          promise = axios.post(`${strapiURL}/${property}`,
             property === 'widths' ?
               { screenwidth: device.width, width: imgsValues[i].width, image: img.id } :
               { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y, image: img.id }
@@ -435,7 +418,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
       sendData('widths');
       sendData('positions');
 
-      const numPromise = axios.put(`http://localhost:1337/images/${img.id}`, { num: imgsValues[i].num }, {
+      const numPromise = axios.put(`${strapiURL}/images/${img.id}`, { num: imgsValues[i].num }, {
         headers: {
           Authorization: `Bearer ${jwtToken}`
         }
@@ -470,7 +453,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
     formData.append('ref', 'image');
     formData.append('field', 'image');
 
-    axios.post("http://localhost:1337/images", { num: pgImgs.length + 1, slide: slideData[pgCurrent].id }, {
+    axios.post(`${strapiURL}/images`, { num: pgImgs.length + 1, slide: slideData[pgCurrent].id }, {
       headers: {
         Authorization: `Bearer ${jwtToken}`
       }
@@ -480,14 +463,14 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
         const promises = [];
 
         promises.push(
-          axios.post(`http://localhost:1337/widths`, { screenwidth: 1920, width: 30, image: res.data.id }, {
+          axios.post(`${strapiURL}/widths`, { screenwidth: 1920, width: 30, image: res.data.id }, {
             headers: {
               Authorization: `Bearer ${jwtToken}`
             }
           })
         );
         promises.push(
-          axios.post(`http://localhost:1337/positions`, { screenwidth: 1920, x: 30, y: 30, image: res.data.id }, {
+          axios.post(`${strapiURL}/positions`, { screenwidth: 1920, x: 30, y: 30, image: res.data.id }, {
             headers: {
               Authorization: `Bearer ${jwtToken}`
             }
@@ -500,8 +483,11 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
           .then(axios.spread((...responses) => {
             console.log('responses:', responses);
 
-            axios.post(`http://localhost:1337/upload`, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
+            axios.post(`${strapiURL}/upload`, formData, {
+              headers: { 
+                Authorization: `Bearer ${jwtToken}`,
+                'Content-Type': 'multipart/form-data' 
+              }
             })
               .then(res => {
                 console.log(res);
@@ -524,20 +510,20 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
     const promises = [];
 
     positionIds.forEach(id => {
-      promises.push(axios.delete(`http://localhost:1337/positions/${id}`, {
+      promises.push(axios.delete(`${strapiURL}/positions/${id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`
         }
       }));
     });
     widthIds.forEach(id => {
-      promises.push(axios.delete(`http://localhost:1337/widths/${id}`, {
+      promises.push(axios.delete(`${strapiURL}/widths/${id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`
         }
       }));
     });
-    promises.push(axios.delete(`http://localhost:1337/images/${pgImgs[index].id}`, {
+    promises.push(axios.delete(`${strapiURL}/images/${pgImgs[index].id}`, {
       headers: {
         Authorization: `Bearer ${jwtToken}`
       }
@@ -562,7 +548,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
         const promises = [];
         imgIdsSorted.forEach((id, i) => {
-          promises.push(axios.put(`http://localhost:1337/images/${id}`, { num: i + 1 }, {
+          promises.push(axios.put(`${strapiURL}/images/${id}`, { num: i + 1 }, {
             headers: {
               Authorization: `Bearer ${jwtToken}`
             }

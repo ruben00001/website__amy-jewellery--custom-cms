@@ -1,26 +1,21 @@
 import './style.scss';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import Login from './pages/login';
 import ForgotPassword from './pages/login/forgotPassword';
 import ResetPassword from './pages/login/resetPassword';
 import Portfolio from './pages/portfolio';
-import Contact from './pages/contact';
-import Shop from './pages/shop';
+// import Contact from './pages/contact';
+// import Shop from './pages/shop';
 
 function App() {
 
-  const [preloadedImages, setPreLoadedImages] = useState([]);
   const [jwtToken, setJwtToken] = useState(null);
 
   const storeJwtTokenAtRoot = (key) => {
     setJwtToken(key)
   }
 
-  const updatePreloadedImages = (url) => {
-    setPreLoadedImages(preloadedImages => preloadedImages.concat(url));
-  }
 
   return (
     <Router>
