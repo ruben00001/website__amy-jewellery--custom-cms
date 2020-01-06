@@ -230,6 +230,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
   const [file, setFile] = useState(null);
   const [pg, setPg] = useState({});
   const [activeLink, setActiveLink] = useState(null);
+  // const [activeDevice, setActiveDevice] = useState('24"');
 
 
   //________________________________________________________________________________
@@ -239,6 +240,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
   const pgImgs = slideData[pgCurrent].imgs;
 
   const strapiURL = Global.strapiURL;
+
 
   useEffect(_ => {
     if (slideData) {
@@ -484,9 +486,9 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
             console.log('responses:', responses);
 
             axios.post(`${strapiURL}/upload`, formData, {
-              headers: { 
+              headers: {
                 Authorization: `Bearer ${jwtToken}`,
-                'Content-Type': 'multipart/form-data' 
+                'Content-Type': 'multipart/form-data'
               }
             })
               .then(res => {
@@ -625,10 +627,6 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
     setDeviceScale(deviceScale => deviceScale === 0 ? 1 : 0);
   }
 
-
-  const test = () => {
-
-  }
 
   return (
     <SPageContainer scale={deviceScale}>

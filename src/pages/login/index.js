@@ -112,6 +112,7 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
       .then(response => {
         // Handle success.
         console.log('Well done...you logged in!');
+        console.log('response:', response)
         setToken(response.data.jwt);
         setTimeout(() => {
           history.push("/portfolio")

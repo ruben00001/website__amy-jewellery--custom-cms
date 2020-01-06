@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch, useRouteMatch, Link } from 'react-router-dom';
+import { BrowserRouter as Route, Switch, useRouteMatch, Link } from 'react-router-dom';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import styled from 'styled-components';
@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faSave, faTimesCircle, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Slide from './slide';
 import { Global } from '../../environment/global';
-
 
 const SSlide_Container = styled.div`
   position: relative;
@@ -68,9 +67,17 @@ export default function Portfolio({ jwtToken }) {
   const [numError, setNumError] = useState(false);
 
   let { path, url } = useRouteMatch();
+  const { strapiURL, getHeader } = Global;
+  const authHeader = { headers: { Authorization: `Bearer ${jwtToken}` } };
 
-  const strapiURL = Global.strapiURL;
+  const apiCall = {
+    get: contentType => axios.get(`${strapiURL}/${contentType}`),
+    post: (contentType, data) => axios.post(`${strapiURL}/${contentType}`, data, authHeader),
+    put: (contentType, data, id) => axios.put(`${strapiURL}/${contentType}/${id}`, data, authHeader),
+    del: (contentType, id) => axios.put(`${strapiURL}/${contentType}/${id}`, authHeader)
+  };
 
+  const { get, post, put, del } = apiCall;
 
   //________________________________________________________________________________
   // PULL DATA FROM STRAPI CMS AND COLLATE
@@ -83,7 +90,7 @@ export default function Portfolio({ jwtToken }) {
 
     let slides;
 
-    axios.get(`${strapiURL}/slides`)
+    get('slides')
       .then(response => {
 
         slides = response.data.map(slide => {
@@ -107,7 +114,7 @@ export default function Portfolio({ jwtToken }) {
         });
         setNums(numArr);
 
-        axios.get(`${strapiURL}/images`)
+        get('images')
           .then(response => {
             response.data.forEach(image => {
               const imgWidths = image.widths.map(imgWidth => {
@@ -172,7 +179,7 @@ export default function Portfolio({ jwtToken }) {
 
           return (
             <img src={image.url}
-            // <img src={strapiURL.image.url}
+              // <img src={strapiURL.image.url}
               style={{
                 position: 'absolute',
                 width: image.widths[0] ? `${image.widths[mqWidthsWidthIndex].width}%` : '30%',
@@ -199,11 +206,7 @@ export default function Portfolio({ jwtToken }) {
   }
 
   const addPage = () => {
-    axios.post(`${strapiURL}/slides`, { num: slideData.length + 1 }, {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`
-      }
-    })
+    post('slides', { num: slideData.length + 1 })
       .then(res => {
         console.log(res.data);
         setToggle();
@@ -216,36 +219,20 @@ export default function Portfolio({ jwtToken }) {
 
     slideData[index].imgs.forEach(img => {
       const widthPromises = img.widths.map(width =>
-        axios.delete(`${strapiURL}/widths/${width.id}`, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`
-          }
-        })
+        del('widths', width.id)
       );
       promises.push(widthPromises);
 
       const positionPromises = img.positions.map(position =>
-        axios.delete(`${strapiURL}/positions/${position.id}`, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`
-          }
-        })
+        del('positions', position.id)
       );
       promises.push(positionPromises);
 
-      const imgPromise = axios.delete(`${strapiURL}/images/${img.id}`, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`
-        }
-      });
+      const imgPromise = axios.delete(`${strapiURL}/images/${img.id}`, getHeader(jwtToken));
       promises.push(imgPromise);
     });
 
-    promises.push(axios.delete(`${strapiURL}/slides/${slideData[index].id}`, {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`
-      }
-    }));
+    promises.push(axios.delete(`${strapiURL}/slides/${slideData[index].id}`, getHeader(jwtToken)));
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
@@ -269,11 +256,7 @@ export default function Portfolio({ jwtToken }) {
 
     nums.forEach((num, i) => {
       if (num !== i + 1) {
-        let promise = axios.put(`${strapiURL}/slides/${slideData[i].id}`, { num: num }, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`
-          }
-        });
+        let promise = put('slides', { num: num }, slideData[i].id);
         promises.push(promise);
       }
     });
@@ -306,7 +289,7 @@ export default function Portfolio({ jwtToken }) {
           <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
             <div style={{ position: 'fixed', top: '20px', left: '20px' }}>
               <FontAwesomeIcon icon={faPlus} style={{ fontSize: '30px', cursor: 'pointer' }} onClick={_ => addPage()} />
-              <p style={{ marginTop: '8px' }}>Add Page</p>
+              <p style={{ marginTop: '8px' }} >Add Page</p>
             </div>
             <div style={{ position: 'fixed', right: '20px', top: '20px', textAlign: 'right' }}>
               <FontAwesomeIcon icon={faSave}
