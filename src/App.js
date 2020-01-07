@@ -1,5 +1,5 @@
 import './style.scss';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import React, { useState } from 'react';
 import Login from './pages/login';
 import ForgotPassword from './pages/login/forgotPassword';
@@ -18,24 +18,28 @@ function App() {
 
 
   return (
-    <Router>
+    <BrowserRouter>
       <Switch>
-        <Route exact path="/" render={_ =>
+        <Route exact path="/">
           <Login storeJwtTokenAtRoot={storeJwtTokenAtRoot} />
-        } />
-        <Route path="/forgot-password" render={_ =>
-          <ForgotPassword />
-        } />
-        <Route path="/reset-password" render={_ =>
-          <ResetPassword />
-        } />
-        <Route path="/portfolio">
-          <Portfolio jwtToken={jwtToken} />
         </Route>
+        <Route path="/forgot-password">
+          <ForgotPassword />
+        </Route>
+        <Route path="/reset-password">
+          <ResetPassword />
+        </Route>
+        <Route path="/portfolio"
+          render={_ => <Portfolio jwtToken={jwtToken} />}
+        />
+
+        {/* <Route path="/portfolio">
+          <Portfolio jwtToken={jwtToken} />
+        </Route> */}
         {/* <Route path="/contact" component={Contact} />
         <Route path="/shop" component={Shop} /> */}
       </Switch>
-    </Router>
+    </BrowserRouter>
   );
 }
 

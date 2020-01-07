@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Route, Switch, useRouteMatch, Link } from 'react-router-dom';
+import { Route, Switch, useRouteMatch, Link } from 'react-router-dom';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import styled from 'styled-components';
@@ -12,7 +12,6 @@ const SSlide_Container = styled.div`
   position: relative;
   width: 100%;
   height: ${props => `${props.height}px`};
-  /* margin: 30px auto; */
   overflow: hidden;
   border: 2px solid black;
 `
@@ -39,7 +38,6 @@ const SSaveWarningContainer = styled.div`
   position: absolute;
   bottom: -120px;
   left: -190px;
-  /* right: 20px; */
   z-index: 10;
   background-color: white;
   display: flex;
@@ -57,8 +55,7 @@ const SSaveWarningMessage = styled.p`
   text-align: center;
 `
 
-
-export default function Portfolio({ jwtToken }) {
+const Portfolio = ({ jwtToken }) => {
 
   const [toggle, set] = useState(false);
   const [slideData, setSlideData] = useState([]);
@@ -66,15 +63,16 @@ export default function Portfolio({ jwtToken }) {
   const [nums, setNums] = useState([]);
   const [numError, setNumError] = useState(false);
 
+
   let { path, url } = useRouteMatch();
-  const { strapiURL, getHeader } = Global;
+  const { strapiURL } = Global;
   const authHeader = { headers: { Authorization: `Bearer ${jwtToken}` } };
 
   const apiCall = {
     get: contentType => axios.get(`${strapiURL}/${contentType}`),
     post: (contentType, data) => axios.post(`${strapiURL}/${contentType}`, data, authHeader),
     put: (contentType, data, id) => axios.put(`${strapiURL}/${contentType}/${id}`, data, authHeader),
-    del: (contentType, id) => axios.put(`${strapiURL}/${contentType}/${id}`, authHeader)
+    del: (contentType, id) => axios.delete(`${strapiURL}/${contentType}/${id}`, authHeader)
   };
 
   const { get, post, put, del } = apiCall;
@@ -83,10 +81,6 @@ export default function Portfolio({ jwtToken }) {
   // PULL DATA FROM STRAPI CMS AND COLLATE
 
   useEffect(_ => {
-
-    console.log('====================================');
-    console.log('API CALL MADE');
-    console.log('====================================');
 
     let slides;
 
@@ -145,7 +139,6 @@ export default function Portfolio({ jwtToken }) {
             });
 
             slides.sort((a, b) => a.num - b.num);
-            console.log('slides:', slides)
             setSlideData(slides);
           })
       })
@@ -157,10 +150,6 @@ export default function Portfolio({ jwtToken }) {
 
   useEffect(_ => {
     if (slideData[0]) {
-      // console.log('====================================');
-      // console.log('CREATING IMG ELEMENTS');
-      // console.log('====================================');
-      // console.log('slideData', slideData);
       const slideImgs = [];
 
       const getIndexOfPropertyForScreenWidth = (img, property) => {
@@ -207,8 +196,7 @@ export default function Portfolio({ jwtToken }) {
 
   const addPage = () => {
     post('slides', { num: slideData.length + 1 })
-      .then(res => {
-        console.log(res.data);
+      .then(_ => {
         setToggle();
       })
   }
@@ -228,17 +216,16 @@ export default function Portfolio({ jwtToken }) {
       );
       promises.push(positionPromises);
 
-      const imgPromise = axios.delete(`${strapiURL}/images/${img.id}`, getHeader(jwtToken));
+      const imgPromise = del('images', img.id);
       promises.push(imgPromise);
     });
 
-    promises.push(axios.delete(`${strapiURL}/slides/${slideData[index].id}`, getHeader(jwtToken)));
+    promises.push(del('slides', slideData[index].id));
 
     Promise.all(promises)
-      .then(axios.spread((...responses) => {
-        console.log('responses:', responses);
+      .then(_ => {
         setToggle();
-      }));
+      });
   }
 
   const updateNums = (index, value) => {
@@ -262,10 +249,9 @@ export default function Portfolio({ jwtToken }) {
     });
 
     Promise.all(promises)
-      .then(axios.spread((...responses) => {
-        console.log('responses:', responses);
+      .then(_ => {
         setToggle();
-      }));
+      });
   }
 
   const handleSave = _ => {
@@ -280,10 +266,8 @@ export default function Portfolio({ jwtToken }) {
     uploadNums();
   }
 
-
-
   return (
-    <>
+    <div>
       <Switch>
         <Route exact path={path}>
           <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
@@ -340,13 +324,14 @@ export default function Portfolio({ jwtToken }) {
             }
           </div>
         </Route>
-        {slideData[0] &&
+        {slideData &&
           <Route path={`${path}/:slideId`}
-            component={_ => <Slide slideData={slideData} setToggle={setToggle} toggle={toggle} jwtToken={jwtToken} />}
+            render={_ => <Slide slideData={slideData} setToggle={setToggle} toggle={toggle} apiCall={apiCall} jwtToken={jwtToken} />}
           />
         }
       </Switch>
-    </>
+    </div>
   );
 }
 
+export default Portfolio;

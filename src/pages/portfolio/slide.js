@@ -216,7 +216,7 @@ const SReminderBox = styled.div`
 
 
 
-function Slide({ slideData, setToggle, toggle, jwtToken }) {
+const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
 
   const [device, setDevice] = useState({ width: 1920, height: 1200 });
   const [deviceScale, setDeviceScale] = useState(0);
@@ -233,6 +233,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
   // const [activeDevice, setActiveDevice] = useState('24"');
 
 
+
   //________________________________________________________________________________
   // SET PAGE VARIABLES
 
@@ -241,6 +242,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
   const strapiURL = Global.strapiURL;
 
+  const { post, put, del } = apiCall;
 
   useEffect(_ => {
     if (slideData) {
@@ -366,7 +368,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
 
   //________________________________________________________________________________
-  // HANDLE API CALLS
+  // HANDLE UPLOADS
 
   const reset = () => {
     setUnsavedChange(false);
@@ -392,27 +394,14 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
         }
 
         if (id) {
-          promise = axios.put(`${strapiURL}/${property}/${id}`,
-            property === 'widths' ?
-              { screenwidth: device.width, width: imgsValues[i].width } :
-              { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }
-            , {
-              headers: {
-                Authorization: `Bearer ${jwtToken}`
-              }
-            }
-          )
+          promise = property === 'widths' ?
+            put('widths', { screenwidth: device.width, width: imgsValues[i].width }, id) :
+            put('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }, id)
+
         } else {
-          promise = axios.post(`${strapiURL}/${property}`,
-            property === 'widths' ?
-              { screenwidth: device.width, width: imgsValues[i].width, image: img.id } :
-              { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y, image: img.id }
-            , {
-              headers: {
-                Authorization: `Bearer ${jwtToken}`
-              }
-            }
-          )
+          promise = property === 'widths' ?
+            put('widths', { screenwidth: device.width, width: imgsValues[i].width }) :
+            put('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y })
         }
         promises.push(promise);
       }
@@ -420,11 +409,9 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
       sendData('widths');
       sendData('positions');
 
-      const numPromise = axios.put(`${strapiURL}/images/${img.id}`, { num: imgsValues[i].num }, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`
-        }
-      });
+      // num value updating for each image?
+      const numPromise = put('images', { num: imgsValues[i].num }, img.id);
+
       promises.push(numPromise);
     });
 
@@ -455,28 +442,16 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
     formData.append('ref', 'image');
     formData.append('field', 'image');
 
-    axios.post(`${strapiURL}/images`, { num: pgImgs.length + 1, slide: slideData[pgCurrent].id }, {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`
-      }
-    })
+    post('images', { num: pgImgs.length + 1, slide: slideData[pgCurrent].id })
       .then(res => {
         console.log(res);
         const promises = [];
 
         promises.push(
-          axios.post(`${strapiURL}/widths`, { screenwidth: 1920, width: 30, image: res.data.id }, {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`
-            }
-          })
+          post('widths', { screenwidth: 1920, width: 30, image: res.data.id })
         );
         promises.push(
-          axios.post(`${strapiURL}/positions`, { screenwidth: 1920, x: 30, y: 30, image: res.data.id }, {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`
-            }
-          })
+          post('positions', { screenwidth: 1920, x: 30, y: 30, image: res.data.id })
         );
 
         formData.append('refId', res.data.id);
@@ -511,29 +486,15 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
 
     const promises = [];
 
-    positionIds.forEach(id => {
-      promises.push(axios.delete(`${strapiURL}/positions/${id}`, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`
-        }
-      }));
-    });
-    widthIds.forEach(id => {
-      promises.push(axios.delete(`${strapiURL}/widths/${id}`, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`
-        }
-      }));
-    });
-    promises.push(axios.delete(`${strapiURL}/images/${pgImgs[index].id}`, {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`
-      }
-    }));
+    positionIds.forEach(id => promises.push(del('positions', id)));
+    widthIds.forEach(id => promises.push(del('widths', id)));
+    promises.push(del('images', pgImgs[index].id));
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
         console.log('responses:', responses);
+
+        // On deletion of image, automatically sort nums of remaining imgs
         const nums = pgImgs.map(img => img.num);
         nums.splice(index, 1);
         const numsSorted = nums.slice().sort();
@@ -545,16 +506,9 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
           imgIdsSorted.push(imgIds[nums.indexOf(numsSorted[i])]);
         }
 
-        console.log('imgIds:', imgIds)
-        console.log('imgIdsSorted:', imgIdsSorted)
-
         const promises = [];
         imgIdsSorted.forEach((id, i) => {
-          promises.push(axios.put(`${strapiURL}/images/${id}`, { num: i + 1 }, {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`
-            }
-          }));
+          promises.push(put('images', { num: i + 1 }, id));
         });
 
         Promise.all(promises)
@@ -739,7 +693,7 @@ function Slide({ slideData, setToggle, toggle, jwtToken }) {
   )
 }
 
-export default withRouter(Slide);
+export default Slide;
 
     // const initialNums = pgImgs.map(img => img.num);
 
