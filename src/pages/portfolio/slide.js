@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, withRouter } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
@@ -216,7 +216,7 @@ const SReminderBox = styled.div`
 
 
 
-const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
+const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
   const [device, setDevice] = useState({ width: 1920, height: 1200 });
   const [deviceScale, setDeviceScale] = useState(0);
@@ -244,7 +244,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
 
   const { post, put, del } = apiCall;
 
-  useEffect(_ => {
+  useEffect(_ => { // SET WIDTH AND HEIGHT OF SLIDE
     if (slideData) {
       console.log('====================================');
       console.log('SETTING WINDOW SIZE');
@@ -269,25 +269,25 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
   //________________________________________________________________________________
   // CREATE IMAGES AND PASS IN DATA
 
-  useEffect(_ => { // SET IMG DEFAULT VALUES
+  useEffect(_ => { // SET IMG WIDTH AND POSITION VALUES FOR DEVICE
     if (windowSize.width) {
       console.log('====================================');
       console.log('SETTING IMG VALUES');
       console.log('====================================');
-      console.log('pgImgs:', pgImgs)
+      console.log('pgImgs:', pgImgs);
+
       const getIndexOfPropertyForScreenWidth = (img, property) => {
         const values = img[property].map(size => size.screen);
         const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
         for (let i = 0; i < valuesSorted.length; i++) {
-          if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works
+          if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works for all cases
         }
       }
 
       pgImgs.map(img => {
-        const position = {
-          x: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].x,
-          y: img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')].y
-        };
+        let position = img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')];
+        position = { x: position.x, y: position.y };
+
         const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
 
         setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
@@ -301,12 +301,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
       console.log('CREATING IMG ELEMENTS');
       console.log('====================================');
       console.log('imgvalues', imgsValues);
-
-      const percentToPx = (percent, dimension) => {
-        return dimension === 'x' ?
-          (percent * windowSize.width) / 100 :
-          (percent * windowSize.height) / 100;
-      }
+      
 
       const updateUnsavedChange = _ => {
         setUnsavedChange(!unsavedChange);
@@ -341,9 +336,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
 
         return (
           <ImageComp
-            x={percentToPx(imgsValues[i].position.x, 'x')}
-            y={percentToPx(imgsValues[i].position.y, 'y')}
-            w={`${imgsValues[i].width}%`}
+            values={imgsValues[i]}
             numImgs={pgImgs.length}
             num={img.num}
             src={img.url}
@@ -694,10 +687,3 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken, test }) => {
 }
 
 export default Slide;
-
-    // const initialNums = pgImgs.map(img => img.num);
-
-    // let error;
-// for (let i = 0; i < nums.length; i++) {
-//   if (nums[i] !== initialNums[i]) error = true;
-// }

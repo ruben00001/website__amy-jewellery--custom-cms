@@ -25,21 +25,38 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSize, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
+export default function ImageComp({ values, numImgs, num, src, index, windowSize, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
   const [imgNum, setImgNum] = useState();
 
+
+  const percentToPx = (percent, dimension) => {
+    return dimension === 'x' ?
+      (percent * windowSize.width) / 100 :
+      (percent * windowSize.height) / 100;
+  }
+
+  const pxToPercent = (num, dimension) => {
+    return dimension === 'x' ?
+      (num / windowSize.width) * 100 :
+      (num / windowSize.height) * 100;
+  }
+
   useEffect(_ => {
-    setState({ x: x, y: y, width: w });
-  }, [x]);
+    setState({ 
+      x: percentToPx(values.position.x, 'x'), 
+      y: percentToPx(values.position.y, 'y'), 
+      width: `${values.width}%` 
+    });
+  }, [values]);
 
   useEffect(_ => {
     setImgNum(num);
   }, [num]);
 
-  useEffect(_ => {
+  useEffect(_ => { // SET UP OPTIONS FOR ORDER SELECT
     const arr = [];
     for (let i = 0; i < numImgs; i++) {
       arr.push(<option value={i + 1} key={i}>{i + 1}</option>)
@@ -47,11 +64,6 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSiz
     setOptions(arr);
   }, [numImgs]);
 
-  const pxToPercent = (num, dimension) => {
-    return dimension === 'x' ?
-      (num / windowSize.width) * 100 :
-      (num / windowSize.height) * 100;
-  }
 
   return (
     <Rnd
@@ -96,4 +108,7 @@ export default function ImageComp({ x, y, w, numImgs, num, src, index, windowSiz
 }
 
 
-
+//____NOTES__________________
+{/*
+- react-rnd position doesn't take percentages. To make imgs responsive as poss, necesseary to store pos values as %. So, pos values must be converted from and to % when passing to react-rnd and uploading to Strapi respectively.
+*/}
