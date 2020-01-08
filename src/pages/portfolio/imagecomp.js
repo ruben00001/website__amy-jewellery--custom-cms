@@ -25,11 +25,10 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-export default function ImageComp({ values, numImgs, num, src, index, windowSize, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
+export default function ImageComp({ values, numImgs, src, index, windowSize, updateImgValues, updateImgNum, deleteImage, updateUnsavedChange, updateNumError }) {
 
   const [state, setState] = useState({ x: 10, y: 10, width: '30%' });
   const [options, setOptions] = useState([]);
-  const [imgNum, setImgNum] = useState();
 
 
   const percentToPx = (percent, dimension) => {
@@ -45,16 +44,12 @@ export default function ImageComp({ values, numImgs, num, src, index, windowSize
   }
 
   useEffect(_ => {
-    setState({ 
-      x: percentToPx(values.position.x, 'x'), 
-      y: percentToPx(values.position.y, 'y'), 
-      width: `${values.width}%` 
+    setState({
+      x: percentToPx(values.position.x, 'x'),
+      y: percentToPx(values.position.y, 'y'),
+      width: `${values.width}%`
     });
   }, [values]);
-
-  useEffect(_ => {
-    setImgNum(num);
-  }, [num]);
 
   useEffect(_ => { // SET UP OPTIONS FOR ORDER SELECT
     const arr = [];
@@ -67,33 +62,31 @@ export default function ImageComp({ values, numImgs, num, src, index, windowSize
 
   return (
     <Rnd
-      // style={{ border: '1px solid green' }}
       lockAspectRatio={true}
-      // enableResizing={{ bottomLeft: true, bottomRight: true }}
       size={{ width: state.width }}
       position={{ x: state.x, y: state.y }}
       onDragStop={(e, d) => {
-        // console.log('ONDRAGSTOP:', d.x, d.y);
         setState({ ...state, x: d.x, y: d.y });
-        updateImgValues(pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
+        updateImgValues(index, pxToPercent(d.x, 'x'), pxToPercent(d.y, 'y'));
         updateUnsavedChange();
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
-        // console.log('ONRESIZESTOP:', position.x, position.y);
-        // console.log('ONWIDTHCHANGE:', ref.style.width);
         setState({
           width: ref.style.width,
           ...position
         });
-        updateImgValues(pxToPercent(position.x, 'x'), pxToPercent(position.y, 'y'), Number(ref.style.width.slice(0, -1)));
+        updateImgValues(index, pxToPercent(position.x, 'x'), pxToPercent(position.y, 'y'), Number(ref.style.width.slice(0, -1)));
         updateUnsavedChange();
       }}
     >
       <div style={{ position: 'relative' }}>
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
-          <SSelect value={imgNum}
-            onChange={e => { setImgNum(e.target.value); updateImgNum(Number(e.target.value)); updateUnsavedChange(true); }}
+          <SSelect value={values.num}
+            onChange={e => {
+              updateImgNum(Number(e.target.value), index);
+              updateUnsavedChange(true);
+            }}
             onClick={_ => updateNumError()}
           >
             {options}

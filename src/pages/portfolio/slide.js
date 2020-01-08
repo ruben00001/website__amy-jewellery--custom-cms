@@ -244,7 +244,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
   const { post, put, del } = apiCall;
 
-  useEffect(_ => { // SET WIDTH AND HEIGHT OF SLIDE
+  useEffect(_ => { // SET WIDTH AND HEIGHT OF SLIDE FOR DEVICE
     if (slideData) {
       console.log('====================================');
       console.log('SETTING WINDOW SIZE');
@@ -295,13 +295,17 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
     }
   }, [windowSize]);
 
+  useEffect(_ => {
+    console.log('imgsValues in slide.js:', imgsValues);
+  }, [imgsValues])
+
   useEffect(_ => { // CREATE IMG ELEMENTS
     if (imgsValues[0] && !elementsDone) {
       console.log('====================================');
       console.log('CREATING IMG ELEMENTS');
       console.log('====================================');
       console.log('imgvalues', imgsValues);
-      
+
 
       const updateUnsavedChange = _ => {
         setUnsavedChange(!unsavedChange);
@@ -311,28 +315,28 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
         setNumError(false);
       }
 
+      const updateImgValues = (index, x, y, width) => {
+        setImgsValues(imgsValues => {
+          const arr = [...imgsValues];
+          arr[index].position.x = x;
+          arr[index].position.y = y;
+          if (width) arr[index].width = width;
+
+          return arr;
+        });
+      }
+
+      const updateImgNum = (num, index) => {
+        console.log('num:', num)
+        setImgsValues(imgsValues => {
+          const arr = [...imgsValues];
+          arr[index].num = num;
+
+          return arr;
+        });
+      }
 
       const imgs = pgImgs.map((img, i) => {
-
-        const updateImgValues = (x, y, width) => {
-          setImgsValues(imgsValues => {
-            const arr = [...imgsValues];
-            arr[i].position.x = x;
-            arr[i].position.y = y;
-            if (width) arr[i].width = width;
-
-            return arr;
-          });
-        }
-
-        const updateImgNum = (num) => {
-          setImgsValues(imgsValues => {
-            const arr = [...imgsValues];
-            arr[i].num = num;
-
-            return arr;
-          });
-        }
 
         return (
           <ImageComp
@@ -340,14 +344,13 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
             numImgs={pgImgs.length}
             num={img.num}
             src={img.url}
-            // src={strapiURL.img.url}
             index={i}
             windowSize={windowSize}
             updateImgValues={updateImgValues}
             updateImgNum={updateImgNum}
-            deleteImage={deleteImage}
             updateUnsavedChange={updateUnsavedChange}
             updateNumError={updateNumError}
+            deleteImage={deleteImage}
             key={i}
           />
         )
