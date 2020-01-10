@@ -222,9 +222,6 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   const [deviceScale, setDeviceScale] = useState(0);
   const [windowSize, setWindowSize] = useState({ width: null, height: null });
   const [imgsValues, setImgsValues] = useState([]);
-  // const [imgsValuesUpdated, setImgsValuesUpdated] = useState([]);
-  const [imgElements, setImgElements] = useState([]);
-  // const [elementsDone, setElementsDone] = useState(false); // prevents re-triggering of creation of image elements on imgsValue change
   const [unsavedChange, setUnsavedChange] = useState(false);
   const [remind, setRemind] = useState(false);
   const [numError, setNumError] = useState(false);
@@ -232,7 +229,6 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   const [pg, setPg] = useState({});
   const [activeLink, setActiveLink] = useState(null);
   // const [activeDevice, setActiveDevice] = useState('24"');
-  const [test, setTest] = useState('hello');
 
 
   //_______________________________________________________________________________
@@ -243,56 +239,55 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
   const { post, put, del } = apiCall;
 
-  const updateUnsavedChange = _ => {
-    setUnsavedChange(!unsavedChange);
-  }
-
   const updateNumError = _ => {
     setNumError(false);
   }
 
   const updateImgValues = (valueType, index, newValue) => {
 
-    console.log('newValue from updateImgValues() in slide.js', newValue);
-    setTest('hello I have changed');
-    
-
     setImgsValues(imgsValues => {
       const arr = [...imgsValues];
+      const element = arr[index];
 
-      if (valueType === 'width' || valueType === 'position') {
-        arr[index].position.value.x = newValue.x;
-        arr[index].position.value.y = newValue.y;
-        arr[index].position.change = true;
-      }
       if (valueType === 'width') {
-        arr[index].width.value = newValue.width;
-        arr[index].width.change = true;
-      }  // should be an 'else' here for efficiency
-      if (valueType === 'num') {
-        arr[index].num.value = newValue;
-        arr[index].num.change = true;
-      } 
+        if (newValue.x) {
+          element.position.value.x = newValue.x;
+          element.position.change = true;
+        }
+        if (newValue.y) {
+          element.position.value.y = newValue.y;
+          element.position.change = true;
+        }
+        element.width.value = newValue.width;
+        element.width.change = true;
+      }
+      else if (valueType === 'position') {
+        element.position.value.x = newValue.x;
+        element.position.value.y = newValue.y;
+        element.position.change = true;
+      }
+      else {
+        element.num.value = newValue;
+        element.num.change = true;
+      }
 
       return arr;
     });
+
+    setUnsavedChange(true);
   }
-
-  useEffect(_ => {
-    console.log('imgsValues from slide.js:', imgsValues)
-  },[imgsValues])
-
-  useEffect(_ => {
-    console.log('test from slide.js:', test)
-  },[test])
-
 
 
   //________________________________________________________________________________
-  // CALCULATE THE WIDTH AND HEIGHT OF THE SLIDE FOR THE SELECTED DEVICE
+  // CALCULATE SLIDE AND SET IMG VALUES FOR THE SELECTED DEVICE; 
 
   useEffect(_ => {
     if (slideData) {
+
+      console.log('====================================');
+      console.log('WINDOW SIZE USEEFFECT INVOKED');
+      console.log('====================================');
+
       let width = window.innerWidth * .95 - 2;
       let height = (width + 2) * (device.height / device.width) - 2;
 
@@ -310,96 +305,37 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   }, [slideData, device, deviceScale]);
 
 
-  //________________________________________________________________________________
-  // CREATE IMAGE COMPONENTS AND PASS IN DATA
+  useEffect(_ => {
+    console.log('====================================');
+    console.log('IMG VALUES USEEFFECT INVOKED');
+    console.log('====================================');
 
-  useEffect(_ => { // SET IMG WIDTH AND POSITION VALUES FOR DEVICE THE SELECTED DEVICE
-    if (windowSize.width) {
-
-      const getIndexOfPropertyForScreenWidth = (img, property) => {
-        const values = img[property].map(size => size.screen);
-        const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
-        for (let i = 0; i < valuesSorted.length; i++) {
-          if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works for all cases
-        }
+    const getIndexOfPropertyForScreenWidth = (img, property) => {
+      const values = img[property].map(size => size.screen);
+      const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
+      for (let i = 0; i < valuesSorted.length; i++) {
+        if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works for all cases
       }
-
-      let values = [];
-
-      pgImgs.map((img, i) => {
-        let position = img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')];
-        position = { x: position.x, y: position.y };
-
-        const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
-
-        values.push({
-          position: { change: false, value: position },
-          width: { change: false, value: width },
-          num: { change: false, value: img.num }
-        });
-        // setImgsValues(imgsValues => [...imgsValues, { position: position, width: width, num: img.num }]);
-      });
-
-      setImgsValues(values);
     }
-  }, [windowSize]);
 
+    let values = [];
 
+    pgImgs.map((img, i) => {
+      let position = img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')];
+      position = { x: position.x, y: position.y };
 
-  // useEffect(_ => { // CREATE IMG COMPONENTS
-  //   if (imgsValues[0]) {
-  //     console.log('====================================');
-  //     console.log('img component creation triggered');
-  //     console.log('====================================');
+      const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
 
-  //     const updateUnsavedChange = _ => {
-  //       setUnsavedChange(!unsavedChange);
-  //     }
+      values.push({
+        position: { change: false, value: position },
+        width: { change: false, value: width },
+        num: { change: false, value: img.num }
+      });
+    });
 
-  //     const updateNumError = _ => {
-  //       setNumError(false);
-  //     }
-
-  //     const updateImgValues = (valueType, index, newValue) => {
-
-  //       setImgsValues(imgsValues => {
-  //         const arr = [...imgsValues];
-
-  //         if (valueType === 'width' || valueType === 'position') {
-  //           arr[index].position.value.x = newValue.x;
-  //           arr[index].position.value.y = newValue.y;
-  //         }
-  //         if (valueType === 'width') arr[index].width.value = newValue.width; // should be an 'else' here for efficiency
-  //         if (valueType === 'num') arr[index].num.value = newValue;
-
-  //         return arr;
-  //       });
-  //     }
-
-
-  //     const imgs = pgImgs.map((img, i) => {
-
-  //       return (
-  //         <ImageComp
-  //           values={imgsValues[i]}
-  //           numImgs={pgImgs.length}
-  //           src={img.url}
-  //           index={i}
-  //           windowSize={windowSize}
-  //           updateImgValues={updateImgValues}
-  //           updateUnsavedChange={updateUnsavedChange}
-  //           updateNumError={updateNumError}
-  //           deleteImage={deleteImage}
-  //           key={i}
-  //         />
-  //       )
-  //     });
-
-  //     setImgElements(imgs);
-  //     // setElementsDone(true);
-  //   }
-  // }, [imgsValues]);
-
+    setImgsValues(values);
+  }, [device.width]);
+  // windowSize shouldn't be the second arg here as this doesn't need to be invoked when scale changes
 
 
   //________________________________________________________________________________
@@ -598,7 +534,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   }
 
   const updateScale = _ => {
-    setImgsValues([]);
+    // setImgsValues([]);
     // setElementsDone(false);
     setDeviceScale(deviceScale => deviceScale === 0 ? 1 : 0);
   }
@@ -690,22 +626,19 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
       </SSlideControl>
       <SSlideContainer scale={deviceScale}>
         <SDimensions>{`${device.width} x ${device.height}`}</SDimensions>
-        <SSlide width={windowSize.width} height={windowSize.height} deviceScale={deviceScale}>
+        <SSlide width={windowSize.width} height={windowSize.height} >
           <Navbar windowWidth={windowSize.width} scale={deviceScale} />
           <SImagesContainer>
-            {/* {imgElements} */}
             {
               imgsValues[0] &&
               pgImgs.map((img, i) =>
                 <ImageComp
-                  test={test}
                   values={imgsValues[i]}
-                  numImgs={imgsValues.length}
+                  numImgArr={imgsValues.map(x_ => 'a')}
                   src={img.url}
                   index={i}
                   windowSize={windowSize}
                   updateImgValues={updateImgValues}
-                  updateUnsavedChange={updateUnsavedChange}
                   updateNumError={updateNumError}
                   deleteImage={deleteImage}
                   key={i}
@@ -774,4 +707,7 @@ export default Slide;
   - in principle, receive values for a component, these values change, and any change needs to be uploaded
   - value changes need to be tracked by storing in state
   - makes sense to have an array of initial values, an array of any new values for each img component, and then to compare the 2 to work out what to upload
+
+  Scale
+  - 
 */}
