@@ -57,18 +57,17 @@ const SCheckBox = styled.div`
     
 
     input {
-      
+      cursor: pointer;
     }
 
-    label {
+     /* label {
       position: absolute;
       left: -1px;
       top: 1px;
       width: 13px;
       height: 13px;
-      /* border: 1px solid black; */
       cursor: pointer;
-    }
+    }  */
   }
 `
 
@@ -176,6 +175,7 @@ const SSlide = styled.div`
   height: ${props => `${props.height}px`};
   margin: 0 auto;
   background-color: white;
+  box-sizing: content-box;
   border: 1px solid #e6e6e6;
 `
 
@@ -288,17 +288,18 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
       console.log('WINDOW SIZE USEEFFECT INVOKED');
       console.log('====================================');
 
-      let width = window.innerWidth * .95 - 2;
-      let height = (width + 2) * (device.height / device.width) - 2;
+      let width = window.innerWidth * .95;
+      let height = (width) * (device.height / device.width);
 
       if (deviceScale) {
-        width = device.width + 2;
-        height = device.height + 2;
+        width = device.width;
+        height = device.height;
       }
-      else if (height > window.innerHeight - 86) { // 86 = height of control panel + margin
-        height = (window.innerHeight - 86) * 0.95 - 2;
-        width = (height + 2) * (device.width / device.height) - 2;
+      else if (height > window.innerHeight - 70 - 20) { // 70 = height of control panel; 20 = min padding desired
+        height = (window.innerHeight - 70) * 0.95;
+        width = (height) * (device.width / device.height);
       }
+      // if doesn't fit height-wise, know it does already fit width-wise. So a reduction in width to fit height-wise will definitely fit width-wise too
 
       setWindowSize({ width: width, height: height });
     }
@@ -580,13 +581,14 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
           <SCheckBox >
             <p>To Scale</p>
             <div>
-              <input type='checkbox' id='scale' value='Fit to page'
+              <input type='checkbox'
+              // <input type='checkbox' id='scale' value='Fit to page'
                 onChange={_ => updateScale()}
-                disabled={unsavedChange ? true : false}
+                // disabled={unsavedChange ? true : false}
               />
-              <label htmlFor="scale"
+              {/* <label htmlFor="scale"
                 onClick={_ => unsavedChange ? remindToSave('scale') : null}
-              />
+              /> */}
             </div>
           </SCheckBox>
         </SDevice>

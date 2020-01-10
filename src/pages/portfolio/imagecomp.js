@@ -39,6 +39,9 @@ const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues,
       (num / windowSize.height) * 100;
   }
 
+  useEffect(_ => {
+    console.log('windowSize:', windowSize);
+  }, [windowSize])
 
   return (
     <Rnd
