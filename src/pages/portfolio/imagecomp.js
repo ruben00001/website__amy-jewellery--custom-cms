@@ -39,31 +39,31 @@ const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues,
       (num / windowSize.height) * 100;
   }
 
-  useEffect(_ => {
-    console.log('windowSize:', windowSize);
-  }, [windowSize])
 
   return (
     <Rnd
       lockAspectRatio={true}
-      size={{ width: `${values.width.value}%` }}
-      position={{ x: percentToPx(values.position.value.x, 'x'), y: percentToPx(values.position.value.y, 'y') }}
+      size={{ width: `${values.width.width}%` }}
+      position={{ x: percentToPx(values.position.x, 'x'), y: percentToPx(values.position.y, 'y') }}
       onDragStop={(e, d) => {
-        updateImgValues('position', index,
-          {
-            x: pxToPercent(d.x, 'x'),
-            y: pxToPercent(d.y, 'y')
-          }
-        );
+        console.log('drag stop..');
+        let newValue = {};
+        let x = pxToPercent(d.x, 'x');
+        let y = pxToPercent(d.y, 'y');
+
+        if (Math.round(values.position.x * 10) / 10 !== Math.round(x * 10) / 10) newValue.x = x; // changing select would cause a small change in position. This prevents the resulting unneccessary update of position.
+        if (Math.round(values.position.y * 10) / 10 !== Math.round(y * 10) / 10) newValue.y = y;
+
+        if (newValue.x || newValue.y) updateImgValues('position', index, newValue);
       }}
       onResizeStop={(e, direction, ref, delta, position) => { // a good example of optimisation - putting logic here so not creating any unneccesary name-value pairs in the object
 
-        let newValue = {width: Number(ref.style.width.slice(0, -1))}
+        let newValue = { width: Number(ref.style.width.slice(0, -1)) }
         let x = pxToPercent(position.x, 'x');
         let y = pxToPercent(position.y, 'y');
 
-        if(values.position.value.x !== x) newValue.x = x;
-        if(values.position.value.y !== y) newValue.y = y;
+        if (values.position.x !== x) newValue.x = x;
+        if (values.position.y !== y) newValue.y = y;
 
         updateImgValues('width', index, newValue);
       }}
@@ -71,7 +71,7 @@ const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues,
       <div style={{ position: 'relative' }}>
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
-          <SSelect value={values.num.value}
+          <SSelect value={values.num}
             onChange={e => updateImgValues('num', index, Number(e.target.value))}
             onClick={_ => updateNumError()}
           >

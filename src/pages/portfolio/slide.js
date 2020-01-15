@@ -232,7 +232,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
 
   //_______________________________________________________________________________
-  // SET PAGE PARAMETERS AND FUNCTIONS
+  // SET PAGE'S PARAMETERS AND FUNCTIONS
 
   const pgCurrent = Number(useParams().slideId);
   const pgImgs = slideData[pgCurrent].imgs;
@@ -249,26 +249,28 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
       const arr = [...imgsValues];
       const element = arr[index];
 
+      console.log('newValue:', newValue)
+
       if (valueType === 'width') {
         if (newValue.x) {
-          element.position.value.x = newValue.x;
-          element.position.change = true;
+          element.position.x = newValue.x;
+          element.position.change = true; // declaring a value to flag change seems more efficient than having to compare new and old values to determine if there's been a change later
         }
         if (newValue.y) {
-          element.position.value.y = newValue.y;
+          element.position.y = newValue.y;
           element.position.change = true;
         }
-        element.width.value = newValue.width;
+        element.width.width = newValue.width;
         element.width.change = true;
       }
       else if (valueType === 'position') {
-        element.position.value.x = newValue.x;
-        element.position.value.y = newValue.y;
+        element.position.x = newValue.x;
+        element.position.y = newValue.y;
         element.position.change = true;
       }
       else {
-        element.num.value = newValue;
-        element.num.change = true;
+        element.num = newValue;
+        element.numChange = true;
       }
 
       return arr;
@@ -279,14 +281,11 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
 
   //________________________________________________________________________________
-  // CALCULATE SLIDE AND SET IMG VALUES FOR THE SELECTED DEVICE; 
+  // CALCULATE SLIDE SIZE AND SET IMG VALUES FOR THE SELECTED DEVICE;
+
 
   useEffect(_ => {
     if (slideData) {
-
-      console.log('====================================');
-      console.log('WINDOW SIZE USEEFFECT INVOKED');
-      console.log('====================================');
 
       let width = window.innerWidth * .95;
       let height = (width) * (device.height / device.width);
@@ -307,11 +306,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
 
   useEffect(_ => {
-    console.log('====================================');
-    console.log('IMG VALUES USEEFFECT INVOKED');
-    console.log('====================================');
-
-    const getIndexOfPropertyForScreenWidth = (img, property) => {
+    const getIndex = (img, property) => {
       const values = img[property].map(size => size.screen);
       const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
       for (let i = 0; i < valuesSorted.length; i++) {
@@ -321,22 +316,17 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
     let values = [];
 
-    pgImgs.map((img, i) => {
-      let position = img.positions[getIndexOfPropertyForScreenWidth(img, 'positions')];
-      position = { x: position.x, y: position.y };
-
-      const width = img.widths[getIndexOfPropertyForScreenWidth(img, 'widths')].width;
-
+    pgImgs.forEach(img => {
       values.push({
-        position: { change: false, value: position },
-        width: { change: false, value: width },
-        num: { change: false, value: img.num }
+        id: img.id,
+        num: img.num,
+        position: img.positions[getIndex(img, 'positions')],
+        width: img.widths[getIndex(img, 'widths')]
       });
     });
 
     setImgsValues(values);
   }, [device.width]);
-  // windowSize shouldn't be the second arg here as this doesn't need to be invoked when scale changes
 
 
   //________________________________________________________________________________
@@ -345,47 +335,67 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   const reset = () => {
     setUnsavedChange(false);
     setImgsValues([]);
-    // setElementsDone(false);
     setToggle(!toggle);
   }
 
-  const uploadPropertyValues = () => { // this is updating all of the page's images?? yes!!
+  const uploadPropertyValues = () => {
 
     const promises = [];
 
-    pgImgs.forEach((img, i) => {
-
-      const sendData = (property) => {
-        const arr = img[property].map(width => width.screen);
-
-        let id = 0;
-        let promise;
-
-        for (let i = 0; i < arr.length; i++) { // determine whether to update existing or post new value
-          if (arr[i] === device.width) id = img[property][i].id;
-        }
-
-        if (id) {
-          promise = property === 'widths' ?
-            put('widths', { screenwidth: device.width, width: imgsValues[i].width }, id) :
-            put('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }, id)
-
-        } else {
-          promise = property === 'widths' ?
-            post('widths', { screenwidth: device.width, width: imgsValues[i].width }) :
-            post('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y })
-        }
+    imgsValues.forEach(img => {
+      console.log('img:', img)
+      if (img.numChange) {
+        promises.push(put('images', { num: img.num }, img.id));
+      }
+      if (img.position.change) {
+        const newValue = { screenwidth: device.width, x: img.position.x, y: img.position.y };
+        const promise = img.position.screen === device.width ?
+          put('positions', newValue, img.position.id) :
+          post('positions', newValue)
         promises.push(promise);
       }
-
-      sendData('widths');
-      sendData('positions');
-
-      // num value updating for each image?
-      const numPromise = put('images', { num: imgsValues[i].num }, img.id);
-
-      promises.push(numPromise);
+      if (img.width.change) {
+        const newValue = { screenwidth: device.width, width: img.width.width };
+        const promise = img.width.screen === device.width ?
+          put('widths', newValue, img.width.id) :
+          post('widths', newValue)
+        promises.push(promise);
+      }
     });
+
+    // pgImgs.forEach((img, i) => {
+
+    //   const sendData = (property) => {
+    //     const arr = img[property].map(width => width.screen);
+
+    //     let id = 0;
+    //     let promise;
+
+    //     for (let i = 0; i < arr.length; i++) { // determine whether to update existing or post new value
+    //       if (arr[i] === device.width) id = img[property][i].id;
+    //     }
+
+    //     if (id) {
+    //       promise = property === 'widths' ?
+    //         put('widths', { screenwidth: device.width, width: imgsValues[i].width }, id) :
+    //         put('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }, id)
+    //     }
+    //     else {
+    //       promise = property === 'widths' ?
+    //         post('widths', { screenwidth: device.width, width: imgsValues[i].width }) :
+    //         post('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y })
+    //     }
+    //     promises.push(promise);
+    //   }
+
+    //   sendData('widths');
+    //   sendData('positions');
+
+    //   // num value updating for each image?
+    //   const numPromise = put('images', { num: imgsValues[i].num }, img.id);
+
+    //   promises.push(numPromise);
+    // });
 
     Promise.all(promises)
       .then(axios.spread((...responses) => {
@@ -582,9 +592,9 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
             <p>To Scale</p>
             <div>
               <input type='checkbox'
-              // <input type='checkbox' id='scale' value='Fit to page'
+                // <input type='checkbox' id='scale' value='Fit to page'
                 onChange={_ => updateScale()}
-                // disabled={unsavedChange ? true : false}
+              // disabled={unsavedChange ? true : false}
               />
               {/* <label htmlFor="scale"
                 onClick={_ => unsavedChange ? remindToSave('scale') : null}
