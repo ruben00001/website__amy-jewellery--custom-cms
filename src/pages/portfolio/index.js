@@ -57,11 +57,11 @@ const SSaveWarningMessage = styled.p`
 
 const Portfolio = ({ jwtToken }) => {
 
-  const [toggle, set] = useState(false);
   const [slideData, setSlideData] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [nums, setNums] = useState([]);
   const [numError, setNumError] = useState(false);
+  const [reset, setReset] = useState(false);
 
 
   let { path, url } = useRouteMatch();
@@ -142,7 +142,7 @@ const Portfolio = ({ jwtToken }) => {
             setSlideData(slides);
           })
       })
-  }, [toggle]);
+  }, [reset]);
 
 
   //________________________________________________________________________________
@@ -190,14 +190,14 @@ const Portfolio = ({ jwtToken }) => {
   // HANDLE DATA CHANGE & UPLOADS
 
 
-  const setToggle = () => {
-    set(!toggle);
+  const triggerReset = () => {
+    setReset(!reset);
   }
 
   const addPage = () => {
     post('slides', { num: slideData.length + 1 })
       .then(_ => {
-        setToggle();
+        triggerReset();
       })
   }
 
@@ -224,7 +224,7 @@ const Portfolio = ({ jwtToken }) => {
 
     Promise.all(promises)
       .then(_ => {
-        setToggle();
+        triggerReset();
       });
   }
 
@@ -250,7 +250,7 @@ const Portfolio = ({ jwtToken }) => {
 
     Promise.all(promises)
       .then(_ => {
-        setToggle();
+        triggerReset();
       });
   }
 
@@ -326,7 +326,7 @@ const Portfolio = ({ jwtToken }) => {
         </Route>
         {slideData &&
           <Route path={`${path}/:slideId`}
-            render={_ => <Slide slideData={slideData} setToggle={setToggle} toggle={toggle} apiCall={apiCall} jwtToken={jwtToken} />}
+            render={_ => <Slide slideData={slideData} triggerReset={triggerReset} reset={reset} apiCall={apiCall} jwtToken={jwtToken} />}
           />
         }
       </Switch>

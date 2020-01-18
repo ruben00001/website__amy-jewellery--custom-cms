@@ -27,31 +27,31 @@ const SSelect = styled.select`
 
 const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues, deleteImage, updateNumError }) => {
 
-  const percentToPx = (percent, dimension) => {
+  const percentToPx = (value, dimension) => {
     return dimension === 'x' ?
-      (percent * windowSize.width) / 100 :
-      (percent * windowSize.height) / 100;
+      (value * windowSize.width) / 100 :
+      (value * windowSize.height) / 100;
   }
 
-  const pxToPercent = (num, dimension) => {
+  const pxToPercent = (value, dimension) => {
     return dimension === 'x' ?
-      (num / windowSize.width) * 100 :
-      (num / windowSize.height) * 100;
+      (value / windowSize.width) * 100 :
+      (value / windowSize.height) * 100;
   }
 
 
   return (
     <Rnd
       lockAspectRatio={true}
-      size={{ width: `${values.width.width}%` }}
-      position={{ x: percentToPx(values.position.x, 'x'), y: percentToPx(values.position.y, 'y') }}
+      size={{ width: values ? `${values.width.width}%` : 0 }}
+      position={{ x: values ? percentToPx(values.position.x, 'x') : 0, y: values ? percentToPx(values.position.y, 'y') : 0 }}
       onDragStop={(e, d) => {
         console.log('drag stop..');
         let newValue = {};
         let x = pxToPercent(d.x, 'x');
         let y = pxToPercent(d.y, 'y');
 
-        if (Math.round(values.position.x * 10) / 10 !== Math.round(x * 10) / 10) newValue.x = x; // changing select would cause a small change in position. This prevents the resulting unneccessary update of position.
+        if (Math.round(values.position.x * 10) / 10 !== Math.round(x * 10) / 10) newValue.x = x; // changing select was causing a small change in position. This prevents the resulting unneccessary update of position.
         if (Math.round(values.position.y * 10) / 10 !== Math.round(y * 10) / 10) newValue.y = y;
 
         if (newValue.x || newValue.y) updateImgValues('position', index, newValue);
@@ -71,7 +71,7 @@ const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues,
       <div style={{ position: 'relative' }}>
         <img style={{ pointerEvents: 'none', width: '100%', height: '100%' }} src={src} />
         <SInfo>
-          <SSelect value={values.num}
+          <SSelect value={ values ? values.num : 0}
             onChange={e => updateImgValues('num', index, Number(e.target.value))}
             onClick={_ => updateNumError()}
           >

@@ -216,12 +216,12 @@ const SReminderBox = styled.div`
 
 
 
-const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
+const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
 
   const [device, setDevice] = useState({ width: 1920, height: 1200 });
   const [deviceScale, setDeviceScale] = useState(0);
   const [windowSize, setWindowSize] = useState({ width: null, height: null });
-  const [imgsValues, setImgsValues] = useState([]);
+  const [imgsValues, setImgsValues] = useState([]); // re-name this - not clear what means (values specifically for device)
   const [unsavedChange, setUnsavedChange] = useState(false);
   const [remind, setRemind] = useState(false);
   const [numError, setNumError] = useState(false);
@@ -229,6 +229,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   const [pg, setPg] = useState({});
   const [activeLink, setActiveLink] = useState(null);
   // const [activeDevice, setActiveDevice] = useState('24"');
+
 
 
   //_______________________________________________________________________________
@@ -284,9 +285,9 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
   // CALCULATE SLIDE SIZE AND SET IMG VALUES FOR THE SELECTED DEVICE;
 
 
+  // change windowSize to slideSize
   useEffect(_ => {
     if (slideData) {
-
       let width = window.innerWidth * .95;
       let height = (width) * (device.height / device.width);
 
@@ -302,15 +303,22 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
       setWindowSize({ width: width, height: height });
     }
-  }, [slideData, device, deviceScale]);
-
+  }, [slideData, device.width, deviceScale]);
 
   useEffect(_ => {
-    const getIndex = (img, property) => {
+    console.log('====================================');
+    console.log('IMG VALUE CREATION INITIATED..');
+    console.log('====================================');
+
+    console.log('pgImgs:', pgImgs)
+
+    const getValue = (img, property) => {
       const values = img[property].map(size => size.screen);
       const valuesSorted = img[property].map(size => size.screen).sort((a, b) => a - b);
       for (let i = 0; i < valuesSorted.length; i++) {
-        if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) return values.indexOf(valuesSorted[i]) // *** double-check this works for all cases
+        if (device.width <= valuesSorted[i] || !valuesSorted[i + 1]) {
+          return img[property][values.indexOf(valuesSorted[i])];
+        }
       }
     }
 
@@ -320,22 +328,22 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
       values.push({
         id: img.id,
         num: img.num,
-        position: img.positions[getIndex(img, 'positions')],
-        width: img.widths[getIndex(img, 'widths')]
+        position: getValue(img, 'positions'),
+        width: getValue(img, 'widths')
       });
     });
 
     setImgsValues(values);
-  }, [device.width]);
+  }, [slideData, device.width]); // adding slideData to force recreation of imgValues after new image upload. But leads to unneccessary retriggering after upload of new width and pos values
 
 
   //________________________________________________________________________________
   // HANDLE UPLOADS
 
-  const reset = () => {
+  const handleReset = () => {
     setUnsavedChange(false);
-    setImgsValues([]);
-    setToggle(!toggle);
+    setRemind(false);
+    triggerReset(!reset);
   }
 
   const uploadPropertyValues = () => {
@@ -343,19 +351,18 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
     const promises = [];
 
     imgsValues.forEach(img => {
-      console.log('img:', img)
       if (img.numChange) {
         promises.push(put('images', { num: img.num }, img.id));
       }
       if (img.position.change) {
-        const newValue = { screenwidth: device.width, x: img.position.x, y: img.position.y };
+        const newValue = { screenwidth: device.width, x: img.position.x, y: img.position.y, image: img.id };
         const promise = img.position.screen === device.width ?
           put('positions', newValue, img.position.id) :
           post('positions', newValue)
         promises.push(promise);
       }
       if (img.width.change) {
-        const newValue = { screenwidth: device.width, width: img.width.width };
+        const newValue = { screenwidth: device.width, width: img.width.width, image: img.id };
         const promise = img.width.screen === device.width ?
           put('widths', newValue, img.width.id) :
           post('widths', newValue)
@@ -363,46 +370,10 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
       }
     });
 
-    // pgImgs.forEach((img, i) => {
-
-    //   const sendData = (property) => {
-    //     const arr = img[property].map(width => width.screen);
-
-    //     let id = 0;
-    //     let promise;
-
-    //     for (let i = 0; i < arr.length; i++) { // determine whether to update existing or post new value
-    //       if (arr[i] === device.width) id = img[property][i].id;
-    //     }
-
-    //     if (id) {
-    //       promise = property === 'widths' ?
-    //         put('widths', { screenwidth: device.width, width: imgsValues[i].width }, id) :
-    //         put('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y }, id)
-    //     }
-    //     else {
-    //       promise = property === 'widths' ?
-    //         post('widths', { screenwidth: device.width, width: imgsValues[i].width }) :
-    //         post('positions', { screenwidth: device.width, x: imgsValues[i].position.x, y: imgsValues[i].position.y })
-    //     }
-    //     promises.push(promise);
-    //   }
-
-    //   sendData('widths');
-    //   sendData('positions');
-
-    //   // num value updating for each image?
-    //   const numPromise = put('images', { num: imgsValues[i].num }, img.id);
-
-    //   promises.push(numPromise);
-    // });
-
     Promise.all(promises)
-      .then(axios.spread((...responses) => {
-        console.log('responses:', responses);
-        setRemind(false);
-        reset();
-      }));
+      .then(_ => {
+        handleReset();
+      });
   }
 
   const handleSave = _ => {
@@ -426,22 +397,15 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
 
     post('images', { num: pgImgs.length + 1, slide: slideData[pgCurrent].id })
       .then(res => {
-        console.log(res);
-        const promises = [];
-
-        promises.push(
-          post('widths', { screenwidth: 1920, width: 30, image: res.data.id })
-        );
-        promises.push(
+        const promises = [
+          post('widths', { screenwidth: 1920, width: 30, image: res.data.id }),
           post('positions', { screenwidth: 1920, x: 30, y: 30, image: res.data.id })
-        );
+        ];
 
         formData.append('refId', res.data.id);
 
         Promise.all(promises)
-          .then(axios.spread((...responses) => {
-            console.log('responses:', responses);
-
+          .then(res => {
             axios.post(`${Global.strapiURL}/upload`, formData, {
               headers: {
                 Authorization: `Bearer ${jwtToken}`,
@@ -449,20 +413,20 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
               }
             })
               .then(res => {
-                console.log(res);
-                reset();
+                handleReset();
+                setFile(null);
               })
               .catch(err => {
                 console.log(err);
               });
-          }));
+          });
       })
       .catch(err => {
         console.log(err);
       });
   }
 
-  const deleteImage = (index) => {
+  const deleteImage = (index) => { // should trigger save warning
     const positionIds = pgImgs[index].positions.map(position => position.id);
     const widthIds = pgImgs[index].widths.map(width => width.id);
 
@@ -472,33 +436,30 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
     widthIds.forEach(id => promises.push(del('widths', id)));
     promises.push(del('images', pgImgs[index].id));
 
+
     Promise.all(promises)
-      .then(axios.spread((...responses) => {
-        console.log('responses:', responses);
-
+      .then(_ => {
         // On deletion of image, automatically set nums of remaining imgs
-        const nums = pgImgs.map(img => img.num);
-        nums.splice(index, 1);
-        const numsSorted = nums.slice().sort();
-        const imgIds = pgImgs.map(img => img.id)
-        imgIds.splice(index, 1);
+        const imgValuesCopy = imgsValues.slice();
+        const removedNum = imgsValues[index].num;
+        imgValuesCopy.splice(index, 1);
 
-        const imgIdsSorted = [];
-        for (let i = 0; i < imgIds.length; i++) {
-          imgIdsSorted.push(imgIds[nums.indexOf(numsSorted[i])]);
-        }
+        const nums = imgValuesCopy.map(img => img.num);
+        const numsSorted = nums.sort((a, b) => a - b);
 
         const promises = [];
-        imgIdsSorted.forEach((id, i) => {
-          promises.push(put('images', { num: i + 1 }, id));
-        });
+        for (let i = removedNum - 1; i < numsSorted.length; i++) {
+          promises.push(put('images', { num: i + 1 }, imgValuesCopy[nums.indexOf(numsSorted[i])].id));
+        }
 
-        Promise.all(promises)
-          .then(axios.spread((...responses) => {
-            console.log('responses:', responses);
-            reset();
-          }));
-      }));
+        if (promises[0]) {
+          Promise.all(promises)
+            .then(_ => {
+              handleReset();
+            });
+        }
+        else handleReset();
+      });
   }
 
   //________________________________________________________________________________
@@ -538,17 +499,6 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
     { size: 'iPhone 5', width: 320, height: 568 },
   ];
 
-  const updateDevice = index => {
-    setImgsValues([]);
-    // setElementsDone(false);
-    setDevice({ width: devices[index].width, height: devices[index].height });
-  }
-
-  const updateScale = _ => {
-    // setImgsValues([]);
-    // setElementsDone(false);
-    setDeviceScale(deviceScale => deviceScale === 0 ? 1 : 0);
-  }
 
   const remindToSave = (link) => {
 
@@ -580,7 +530,8 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
               Device:
             </SDeviceLabel>
             <SSelect id="device"
-              onChange={e => updateDevice(e.target.value)}
+              onChange={e => setDevice({ width: devices[e.target.value].width, height: devices[e.target.value].height })}
+              // onChange={e => updateDevice(e.target.value)}
               disabled={unsavedChange ? true : false}
             >
               {devices.map((device, i) =>
@@ -593,7 +544,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
             <div>
               <input type='checkbox'
                 // <input type='checkbox' id='scale' value='Fit to page'
-                onChange={_ => updateScale()}
+                onChange={_ => setDeviceScale(deviceScale => deviceScale === 0 ? 1 : 0)}
               // disabled={unsavedChange ? true : false}
               />
               {/* <label htmlFor="scale"
@@ -646,7 +597,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
               pgImgs.map((img, i) =>
                 <ImageComp
                   values={imgsValues[i]}
-                  numImgArr={imgsValues.map(x_ => 'a')}
+                  numImgArr={imgsValues.map(x => 'a')}
                   src={img.url}
                   index={i}
                   windowSize={windowSize}
@@ -661,7 +612,8 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
           <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
         </SSlide>
       </SSlideContainer>
-      {remind &&
+      {
+        remind &&
         <SReminderScreen>
           <OutsideClickHandler
             onOutsideClick={_ => setRemind(false)}
@@ -689,7 +641,7 @@ const Slide = ({ slideData, setToggle, toggle, apiCall, jwtToken }) => {
           </OutsideClickHandler>
         </SReminderScreen>
       }
-    </SPageContainer>
+    </SPageContainer >
   )
 }
 
@@ -720,6 +672,12 @@ export default Slide;
   - value changes need to be tracked by storing in state
   - makes sense to have an array of initial values, an array of any new values for each img component, and then to compare the 2 to work out what to upload
 
-  Scale
-  - 
+  After newValues are saved, pgImgs doesn't change - switching between devices doesn't work properly
+  - could have a copy of pgImgs in state
+  - as well as saving, new values updates this copy
+  - OR instead of having 'imgValues' (a copy in state of this page's img values), everything runs off this copy
+  - OR can just have a hard 'reset' and refresh page's values with another api call after update
+  - the last option leads to the issue of the device jumping back to default value after saving
+  - if create new state, what happens if go to another page and then return to the current one where changes saved?
+  
 */}
