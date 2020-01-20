@@ -23,26 +23,24 @@ const SSlideLink = styled.div`
 `
 
 
-function ImageNav ({ previousPage, nextPage, unsavedChange, remindToSave }) {
+function ImageNav({ previousPage, nextPage, unsavedChange, setScreen }) {
 
   return (
     <SSlideLinkContainer>
       <SSlideLink
-        onClick={_ => remindToSave('previous')}
+        onClick={_ => { if (unsavedChange) setScreen(previousPage) }}
       >
-        {/* <Link style={{ pointerEvents: 'none' }} */}
-        <Link style={unsavedChange ? { pointerEvents: 'none' } : null}
-          to={`/portfolio/${previousPage}`}
+        <Link to={`/portfolio/${previousPage}`}
+          style={unsavedChange ? { pointerEvents: 'none' } : null}
         >
           previous page
         </Link>
       </SSlideLink>
       <SSlideLink
-        onClick={_ => remindToSave('next')}
+        onClick={_ => unsavedChange ? setScreen(nextPage) : null}
       >
-        {/* <Link style={{ pointerEvents: 'none' }} */}
-        <Link style={unsavedChange ? { pointerEvents: 'none' } : null}
-          to={`/portfolio/${nextPage}`}
+        <Link to={`/portfolio/${nextPage}`}
+          style={unsavedChange ? { pointerEvents: 'none' } : null}
         >
           next page
         </Link>

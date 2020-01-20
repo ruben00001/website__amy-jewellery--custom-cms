@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
-import OutsideClickHandler from 'react-outside-click-handler';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpload, faSave, faTimesCircle, faHome } from "@fortawesome/free-solid-svg-icons";
+import { faUpload, faSave, faHome } from "@fortawesome/free-solid-svg-icons";
 import { Global } from '../../environment/global';
 import Navbar from '../../components/navbar'
 import ImageNav from './imagenav';
 import ImageComp from './imagecomp';
+import Screen from '../../components/screens';
 
 
 const SPageContainer = styled.div`
@@ -37,9 +37,9 @@ const SDevice = styled.div`
 const SDeviceLabel = styled.label`
   position: absolute;
   left: -60px;
-  padding-right: ${props => props.remind ? '114px' : '0'};
+  padding-right: ${props => props.unsavedChange ? '114px' : '0'};
   font-weight: 500;
-  cursor: ${props => props.remind ? 'pointer' : 'default'};
+  cursor: ${props => props.unsavedChange ? 'pointer' : 'default'};
 `
 
 const SCheckBox = styled.div`
@@ -54,20 +54,10 @@ const SCheckBox = styled.div`
 
   div {
     position: relative;
-    
 
     input {
       cursor: pointer;
     }
-
-     /* label {
-      position: absolute;
-      left: -1px;
-      top: 1px;
-      width: 13px;
-      height: 13px;
-      cursor: pointer;
-    }  */
   }
 `
 
@@ -120,46 +110,6 @@ const SIconContainer = styled.div`
   }
 `
 
-const SSaveWarningContainer = styled.div`
-  position: absolute;
-  bottom: -120px;
-  left: -1px;
-  /* right: 20px; */
-  z-index: 10;
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 200px;
-  border: 1px solid #D93025;
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-  padding: 8px 15px;
-  border-radius: 3px;
-`
-
-const SWarningButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-evenly;
-  width: 100%;
-  margin-top: 70px;
-`
-
-const SWarningButton = styled.button`
-  background-color: #89D4F7;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 3px;
-  font-size: 15px;
-  cursor: pointer;
-`
-
-
-const SSaveWarningMessage = styled.p`
-  text-align: center;
-`
-
 const SSlideContainer = styled.div`
   position: relative;
   display: ${props => props.scale ? 'block' : 'flex'};
@@ -181,39 +131,7 @@ const SSlide = styled.div`
 
 const SImagesContainer = styled.div`
   height: 100%;
-  /* border: 2px solid blue; */
 `
-
-const SReminderScreen = styled.div`
-  z-index: 10;
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(146,147,148, 0.6);
-`
-
-const SReminderBox = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 400px;
-  height: 200px;
-  text-align: center;
-  background-color: white;
-  border-radius: 5px;
-
-  & p {
-    font-family: 'Roboto', sans-serif;
-    font-size: 23px;
-    color: #5C5C5C;
-    margin-top: 30px;
-  }
-`
-
 
 
 const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
@@ -222,14 +140,10 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
   const [deviceScale, setDeviceScale] = useState(0);
   const [windowSize, setWindowSize] = useState({ width: null, height: null });
   const [imgsValues, setImgsValues] = useState([]); // re-name this - not clear what means (values specifically for device)
-  const [unsavedChange, setUnsavedChange] = useState(false);
-  const [remind, setRemind] = useState(false);
-  const [numError, setNumError] = useState(false);
   const [file, setFile] = useState(null);
   const [pg, setPg] = useState({});
-  const [activeLink, setActiveLink] = useState(null);
-  // const [activeDevice, setActiveDevice] = useState('24"');
-
+  const [screen, setScreen] = useState(null);
+  const [unsavedChange, setUnsavedChange] = useState(false);
 
 
   //_______________________________________________________________________________
@@ -239,10 +153,6 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
   const pgImgs = slideData[pgCurrent].imgs;
 
   const { post, put, del } = apiCall;
-
-  const updateNumError = _ => {
-    setNumError(false);
-  }
 
   const updateImgValues = (valueType, index, newValue) => {
 
@@ -255,7 +165,7 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
       if (valueType === 'width') {
         if (newValue.x) {
           element.position.x = newValue.x;
-          element.position.change = true; // declaring a value to flag change seems more efficient than having to compare new and old values to determine if there's been a change later
+          element.position.change = true; // declaring a value to flag change seems more efficient than having to compare new and old values to determine if there's been a change later. BUT this doesn't allow for a change then a change back! (check imageComp)
         }
         if (newValue.y) {
           element.position.y = newValue.y;
@@ -342,12 +252,23 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
 
   const handleReset = () => {
     setUnsavedChange(false);
-    setRemind(false);
     triggerReset(!reset);
   }
 
-  const uploadPropertyValues = () => {
+  const handleSave = _ => {
+    const nums = imgsValues.map(img => img.num).sort();
 
+    for (let i = 0; i < nums.length - 1; i++) {
+      if (nums[i] === nums[i + 1]) {
+        setScreen('numError');
+        return;
+      }
+    }
+    uploadPropertyValues();
+  }
+
+  const uploadPropertyValues = () => {
+    setScreen('upload');
     const promises = [];
 
     imgsValues.forEach(img => {
@@ -372,24 +293,20 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
 
     Promise.all(promises)
       .then(_ => {
+        setScreen('success');
+        setTimeout(() => {
+          setScreen(null);
+        }, 1000);
         handleReset();
+      })
+      .catch(_ => {
+        setScreen('uploadError');
       });
-  }
-
-  const handleSave = _ => {
-    const nums = imgsValues.map(img => img.num).sort();
-
-    for (let i = 0; i < nums.length - 1; i++) {
-      if (nums[i] === nums[i + 1]) {
-        setNumError(true);
-        return;
-      }
-    }
-    uploadPropertyValues();
   }
 
   const uploadImage = e => {
     e.preventDefault();
+    setScreen('upload');
 
     const formData = new FormData(e.target);
     formData.append('ref', 'image');
@@ -405,28 +322,33 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
         formData.append('refId', res.data.id);
 
         Promise.all(promises)
-          .then(res => {
+          .then(_ => {
             axios.post(`${Global.strapiURL}/upload`, formData, {
               headers: {
                 Authorization: `Bearer ${jwtToken}`,
                 'Content-Type': 'multipart/form-data'
               }
             })
-              .then(res => {
+              .then(_ => {
+                setScreen('success');
+                setTimeout(() => {
+                  setScreen(null);
+                }, 1000);
                 handleReset();
                 setFile(null);
               })
-              .catch(err => {
-                console.log(err);
+              .catch(_ => {
+                setScreen('uploadError');
               });
           });
       })
-      .catch(err => {
-        console.log(err);
+      .catch(_ => {
+        setScreen('uploadError');
       });
   }
 
   const deleteImage = (index) => { // should trigger save warning
+    setScreen('upload');
     const positionIds = pgImgs[index].positions.map(position => position.id);
     const widthIds = pgImgs[index].widths.map(width => width.id);
 
@@ -455,10 +377,26 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
         if (promises[0]) {
           Promise.all(promises)
             .then(_ => {
+              setScreen('success');
+              setTimeout(() => {
+                setScreen(null);
+              }, 1000);
               handleReset();
+            })
+            .catch(_ => {
+              setScreen('uploadError');
             });
         }
-        else handleReset();
+        else {
+          setScreen('success');
+          setTimeout(() => {
+            setScreen(null);
+          }, 1000);
+          handleReset();
+        }
+      })
+      .catch(_ => {
+        setScreen('uploadError');
       });
   }
 
@@ -500,39 +438,32 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
   ];
 
 
-  const remindToSave = (link) => {
-
-    if (unsavedChange) {
-      if (link === 'previous' || link === 'next') {
-        link === 'previous' ? setActiveLink(pg.previous) : setActiveLink(pg.next);
-      }
-      else {
-        setActiveLink(link);
-      }
-
-      setRemind(true);
-    }
-  }
-
-
   return (
     <SPageContainer scale={deviceScale}>
+      {screen &&
+        <Screen message={screen} closeScreen={_ => setScreen(null)} ignoreChanges={_ => setUnsavedChange(false)} />
+      }
       <SSlideControl>
         <SDevice>
-          <Link to='/portfolio' style={{ marginRight: '130px', fontSize: '24px', color: '#FFD753' }}>
-            <FontAwesomeIcon icon={faHome} />
-          </Link>
+          <div onClick={_ => unsavedChange ? setScreen('unsaved-home') : null}>
+            {
+              unsavedChange ?
+                <FontAwesomeIcon icon={faHome} style={{ marginRight: '130px', fontSize: '24px', color: '#FFD753', cursor: 'pointer' }} />
+                :
+                <Link to='/portfolio' style={{ marginRight: '130px', fontSize: '24px', color: '#FFD753' }}>
+                  <FontAwesomeIcon icon={faHome} />
+                </Link>
+            }
+          </div>
           <div style={{ position: 'relative' }} >
             <SDeviceLabel htmlFor="device"
-              onClick={_ => unsavedChange ? remindToSave('device') : null}
-              remind={unsavedChange}
+              onClick={_ => unsavedChange ? setScreen('unsaved') : null}
+              unsavedChange={unsavedChange} // prop for styled component
             >
               Device:
             </SDeviceLabel>
             <SSelect id="device"
               onChange={e => setDevice({ width: devices[e.target.value].width, height: devices[e.target.value].height })}
-              // onChange={e => updateDevice(e.target.value)}
-              disabled={unsavedChange ? true : false}
             >
               {devices.map((device, i) =>
                 <option value={i} key={i}>{device.size}</option>
@@ -543,13 +474,8 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
             <p>To Scale</p>
             <div>
               <input type='checkbox'
-                // <input type='checkbox' id='scale' value='Fit to page'
                 onChange={_ => setDeviceScale(deviceScale => deviceScale === 0 ? 1 : 0)}
-              // disabled={unsavedChange ? true : false}
               />
-              {/* <label htmlFor="scale"
-                onClick={_ => unsavedChange ? remindToSave('scale') : null}
-              /> */}
             </div>
           </SCheckBox>
         </SDevice>
@@ -560,7 +486,7 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
               disabled={unsavedChange ? true : false}
             />
             <SImageLabel htmlFor="file"
-              onClick={_ => unsavedChange ? remindToSave('device') : null}
+              onClick={_ => unsavedChange ? setScreen('unsaved') : null}
             >
               {file ? file[0] : <><FontAwesomeIcon icon={faUpload} id="upload" style={{ marginRight: '8px' }} /> Add Image</>}
             </SImageLabel>
@@ -573,18 +499,6 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
             style={{ fontSize: '25px', cursor: 'pointer' }}
             onClick={_ => handleSave()}
           />
-          {numError &&
-            <OutsideClickHandler
-              onOutsideClick={_ => setNumError(false)}
-            >
-              <SSaveWarningContainer>
-                <FontAwesomeIcon icon={faTimesCircle}
-                  style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
-                />
-                <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
-              </SSaveWarningContainer>
-            </OutsideClickHandler>
-          }
         </SIconContainer>
       </SSlideControl>
       <SSlideContainer scale={deviceScale}>
@@ -602,45 +516,22 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
                   index={i}
                   windowSize={windowSize}
                   updateImgValues={updateImgValues}
-                  updateNumError={updateNumError}
                   deleteImage={deleteImage}
+                  unsavedChange={unsavedChange}
+                  setScreen={setScreen}
                   key={i}
                 />
               )
             }
           </SImagesContainer>
-          <ImageNav previousPage={pg.previous} nextPage={pg.next} unsavedChange={unsavedChange} remindToSave={remindToSave} />
+          <ImageNav
+            previousPage={pg.previous}
+            nextPage={pg.next}
+            unsavedChange={unsavedChange}
+            setScreen={setScreen}
+            closeScreen={_ => setScreen(null)} />
         </SSlide>
       </SSlideContainer>
-      {
-        remind &&
-        <SReminderScreen>
-          <OutsideClickHandler
-            onOutsideClick={_ => setRemind(false)}
-          >
-            <SReminderBox>
-              <p>There are unsaved changes! You will lose them if you continue.</p>
-              <SWarningButtonContainer>
-                {typeof (activeLink) === 'number' &&
-                  <SWarningButton>
-                    <Link to={`/portfolio/${activeLink}`}
-                      onClick={_ => setRemind(false)}
-                    >
-                      I don't care, proceed!
-                    </Link>
-                  </SWarningButton>
-                }
-                {typeof (activeLink) !== 'number' &&
-                  <SWarningButton onClick={_ => { setUnsavedChange(false); setRemind(false) }}>
-                    Ignore
-                  </SWarningButton>
-                }
-                <SWarningButton onClick={_ => uploadPropertyValues()}>Save</SWarningButton>
-              </SWarningButtonContainer>
-            </SReminderBox>
-          </OutsideClickHandler>
-        </SReminderScreen>
-      }
     </SPageContainer >
   )
 }

@@ -4,9 +4,10 @@ import axios from 'axios';
 import OutsideClickHandler from 'react-outside-click-handler';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faSave, faTimesCircle, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faSave, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Slide from './slide';
 import { Global } from '../../environment/global';
+import Screen from '../../components/screens';
 
 const SSlide_Container = styled.div`
   position: relative;
@@ -34,33 +35,12 @@ const SSelect = styled.select`
   font-size: 24px;
 `
 
-const SSaveWarningContainer = styled.div`
-  position: absolute;
-  bottom: -120px;
-  left: -190px;
-  z-index: 10;
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 200px;
-  border: 1px solid #D93025;
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-  padding: 8px 15px;
-  border-radius: 3px;
-`
-
-const SSaveWarningMessage = styled.p`
-  text-align: center;
-`
-
 const Portfolio = ({ jwtToken }) => {
 
   const [slideData, setSlideData] = useState([]);
   const [imgElements, setImgElements] = useState([]);
   const [nums, setNums] = useState([]);
-  const [numError, setNumError] = useState(false);
+  const [screen, setScreen] = useState(null);
   const [reset, setReset] = useState(false);
 
 
@@ -190,19 +170,23 @@ const Portfolio = ({ jwtToken }) => {
   // HANDLE DATA CHANGE & UPLOADS
 
 
-  const triggerReset = () => {
-    setReset(!reset);
-  }
-
   const addPage = () => {
+    setScreen('upload');
     post('slides', { num: slideData.length + 1 })
       .then(_ => {
-        triggerReset();
+        setScreen('success');
+        setTimeout(() => {
+          setScreen(null);
+        }, 1000);
+        setReset(!reset);
       })
+      .catch(_ => {
+        setScreen('uploadError');
+      });
   }
 
   const deletePage = (index) => {
-
+    setScreen('upload');
     const promises = [];
 
     slideData[index].imgs.forEach(img => {
@@ -224,7 +208,14 @@ const Portfolio = ({ jwtToken }) => {
 
     Promise.all(promises)
       .then(_ => {
-        triggerReset();
+        setScreen('success');
+        setTimeout(() => {
+          setScreen(null);
+        }, 1000);
+        setReset(!reset);
+      })
+      .catch(_ => {
+        setScreen('uploadError');
       });
   }
 
@@ -238,7 +229,7 @@ const Portfolio = ({ jwtToken }) => {
   }
 
   const uploadNums = _ => {
-
+    setScreen('upload');
     const promises = [];
 
     nums.forEach((num, i) => {
@@ -250,7 +241,14 @@ const Portfolio = ({ jwtToken }) => {
 
     Promise.all(promises)
       .then(_ => {
-        triggerReset();
+        setScreen('success');
+        setTimeout(() => {
+          setScreen(null);
+        }, 1000);
+        setReset(!reset);
+      })
+      .catch(_ => {
+        setScreen('uploadError');
       });
   }
 
@@ -259,18 +257,24 @@ const Portfolio = ({ jwtToken }) => {
 
     for (let i = 0; i < arr.length - 1; i++) {
       if (arr[i] === arr[i + 1]) {
-        setNumError(true);
+        setScreen('numError');
         return;
       }
     }
     uploadNums();
   }
 
+  // just do loading on same loading screen.
+  // add a small loading widget in place of button and remove 'x' whilst loading
+
   return (
     <div>
       <Switch>
         <Route exact path={path}>
           <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
+            {screen &&
+              <Screen message={screen} closeScreen={_ => setScreen(null)} />
+            }
             <div style={{ position: 'fixed', top: '20px', left: '20px' }}>
               <FontAwesomeIcon icon={faPlus} style={{ fontSize: '30px', cursor: 'pointer' }} onClick={_ => addPage()} />
               <p style={{ marginTop: '8px' }} >Add Page</p>
@@ -281,52 +285,38 @@ const Portfolio = ({ jwtToken }) => {
                 onClick={_ => handleSave()}
               />
               <p style={{ marginTop: '8px' }}>(save after <br /> changing <br /> slide order)</p>
-              {numError &&
-                <OutsideClickHandler
-                  onOutsideClick={_ => setNumError(false)}
-                >
-                  <SSaveWarningContainer>
-                    <FontAwesomeIcon icon={faTimesCircle}
-                      style={{ color: 'red', fontSize: '25px', marginTop: '15px', marginBottom: '20px' }}
-                    />
-                    <SSaveWarningMessage>Image number error. Make sure no 2 are identical.</SSaveWarningMessage>
-                  </SSaveWarningContainer>
-                </OutsideClickHandler>
-              }
             </div>
             {
               slideData[0] &&
-              slideData.map((slide, i) => {
-                return (
-                  <div style={{ position: 'relative', width: '60%', paddingBottom: '100px', margin: '0 auto' }} key={i}>
-                    <SPageControl>
-                      <SSelect value={nums[i]}
-                        onChange={e => updateNums(i, e.target.value)}
-                        onClick={_ => setNumError(false)}
-                      >
-                        {slideData.map((slide, i) =>
-                          <option value={i + 1} key={i}>{i + 1}</option>
-                        )}
-                      </SSelect>
-                      <FontAwesomeIcon icon={faTrash}
-                        style={{ fontSize: '20px', cursor: 'pointer' }}
-                        onClick={_ => deletePage(i)}
-                      />
-                    </SPageControl>
-                    <Link to={`${url}/${i}`} key={i}>
-                      <SSlide_Container height={(window.innerWidth * 0.6) * 1200 / 1920} key={i} >
-                        {imgElements[i]}
-                      </SSlide_Container>
-                    </Link>
-                  </div>
-                );
-              })
+              slideData.map((slide, i) =>
+                <div style={{ position: 'relative', width: '60%', paddingBottom: '100px', margin: '0 auto' }} key={i}>
+                  <SPageControl>
+                    <SSelect value={nums[i]}
+                      onChange={e => updateNums(i, e.target.value)}
+                      onClick={_ => setScreen(null)}
+                    >
+                      {slideData.map((slide, i) =>
+                        <option value={i + 1} key={i}>{i + 1}</option>
+                      )}
+                    </SSelect>
+                    <FontAwesomeIcon icon={faTrash}
+                      style={{ fontSize: '20px', cursor: 'pointer' }}
+                      onClick={_ => deletePage(i)}
+                    />
+                  </SPageControl>
+                  <Link to={`${url}/${i}`} key={i}>
+                    <SSlide_Container height={(window.innerWidth * 0.6) * 1200 / 1920} key={i} >
+                      {imgElements[i]}
+                    </SSlide_Container>
+                  </Link>
+                </div>
+              )
             }
           </div>
         </Route>
         {slideData &&
           <Route path={`${path}/:slideId`}
-            render={_ => <Slide slideData={slideData} triggerReset={triggerReset} reset={reset} apiCall={apiCall} jwtToken={jwtToken} />}
+            render={_ => <Slide slideData={slideData} triggerReset={_ => setReset(!reset)} reset={reset} apiCall={apiCall} jwtToken={jwtToken} />}
           />
         }
       </Switch>

@@ -25,7 +25,7 @@ const SSelect = styled.select`
   cursor: inherit;
 `
 
-const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues, deleteImage, updateNumError }) => {
+const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues, deleteImage, unsavedChange, setScreen }) => {
 
   const percentToPx = (value, dimension) => {
     return dimension === 'x' ?
@@ -73,14 +73,19 @@ const ImageComp = ({ values, numImgArr, src, index, windowSize, updateImgValues,
         <SInfo>
           <SSelect value={ values ? values.num : 0}
             onChange={e => updateImgValues('num', index, Number(e.target.value))}
-            onClick={_ => updateNumError()}
           >
             {numImgArr.map((x, i) =>
               <option value={i + 1} key={i}>{i + 1}</option>
             )}
           </SSelect>
           <FontAwesomeIcon icon={faTrash}
-            onClick={_ => deleteImage(index)}
+            onClick={_ => {
+              if(unsavedChange) {
+                setScreen('unsaved');
+              } else {
+                deleteImage(index);
+              }
+            }}
           />
         </SInfo>
       </div>
