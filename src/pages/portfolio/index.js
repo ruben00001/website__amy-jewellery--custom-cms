@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Route, Switch, useRouteMatch, Link } from 'react-router-dom';
 import axios from 'axios';
-import OutsideClickHandler from 'react-outside-click-handler';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faSave, faPlus } from "@fortawesome/free-solid-svg-icons";
@@ -42,6 +41,8 @@ const Portfolio = ({ jwtToken }) => {
   const [nums, setNums] = useState([]);
   const [screen, setScreen] = useState(null);
   const [reset, setReset] = useState(false);
+  const [unsaved, setUnsaved] = useState(false);
+  const [ignoreChanges, setIgnore] = useState(false);
 
 
   let { path, url } = useRouteMatch();
@@ -130,6 +131,9 @@ const Portfolio = ({ jwtToken }) => {
 
   useEffect(_ => {
     if (slideData[0]) {
+
+      console.log('slideData:', slideData)
+
       const slideImgs = [];
 
       const getIndexOfPropertyForScreenWidth = (img, property) => {
@@ -170,55 +174,6 @@ const Portfolio = ({ jwtToken }) => {
   // HANDLE DATA CHANGE & UPLOADS
 
 
-  const addPage = () => {
-    setScreen('upload');
-    post('slides', { num: slideData.length + 1 })
-      .then(_ => {
-        setScreen('success');
-        setTimeout(() => {
-          setScreen(null);
-        }, 1000);
-        setReset(!reset);
-      })
-      .catch(_ => {
-        setScreen('uploadError');
-      });
-  }
-
-  const deletePage = (index) => {
-    setScreen('upload');
-    const promises = [];
-
-    slideData[index].imgs.forEach(img => {
-      const widthPromises = img.widths.map(width =>
-        del('widths', width.id)
-      );
-      promises.push(widthPromises);
-
-      const positionPromises = img.positions.map(position =>
-        del('positions', position.id)
-      );
-      promises.push(positionPromises);
-
-      const imgPromise = del('images', img.id);
-      promises.push(imgPromise);
-    });
-
-    promises.push(del('slides', slideData[index].id));
-
-    Promise.all(promises)
-      .then(_ => {
-        setScreen('success');
-        setTimeout(() => {
-          setScreen(null);
-        }, 1000);
-        setReset(!reset);
-      })
-      .catch(_ => {
-        setScreen('uploadError');
-      });
-  }
-
   const updateNums = (index, value) => {
     setNums(nums => {
       const arr = [...nums];
@@ -228,8 +183,26 @@ const Portfolio = ({ jwtToken }) => {
     })
   }
 
+  const checkNumError = _ => {
+    const arr = [...nums].sort();
+
+    for (let i = 0; i < arr.length - 1; i++) {
+      if (arr[i] === arr[i + 1]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const handleSave = _ => {
+    if (checkNumError()) {
+      setScreen('numError');
+    } else {
+      uploadNums();
+    }
+  }
+
   const uploadNums = _ => {
-    setScreen('upload');
     const promises = [];
 
     nums.forEach((num, i) => {
@@ -239,33 +212,88 @@ const Portfolio = ({ jwtToken }) => {
       }
     });
 
-    Promise.all(promises)
-      .then(_ => {
-        setScreen('success');
-        setTimeout(() => {
-          setScreen(null);
-        }, 1000);
-        setReset(!reset);
-      })
-      .catch(_ => {
-        setScreen('uploadError');
-      });
-  }
-
-  const handleSave = _ => {
-    const arr = [...nums].sort();
-
-    for (let i = 0; i < arr.length - 1; i++) {
-      if (arr[i] === arr[i + 1]) {
-        setScreen('numError');
-        return;
-      }
+    if (promises[0]) {
+      setScreen('upload');
+      Promise.all(promises)
+        .then(_ => {
+          setScreen('success');
+          setTimeout(() => {
+            setScreen(null);
+          }, 1000);
+          setReset(!reset);
+        })
+        .catch(_ => {
+          setScreen('uploadError');
+        });
     }
-    uploadNums();
   }
 
-  // just do loading on same loading screen.
-  // add a small loading widget in place of button and remove 'x' whilst loading
+  const checkForChange = _ => {
+    for (let i = 0; i < nums.length; i++) {
+      if (nums[i] !== i + 1) return true;
+    }
+    return false;
+  }
+
+  const addPage = _ => {
+    if (checkForChange() && !ignoreChanges) setScreen('unsaved')
+    else {
+      setScreen('upload');
+      post('slides', { num: slideData.length + 1 })
+        .then(_ => {
+          setScreen('success');
+          setTimeout(() => {
+            setScreen(null);
+          }, 1000);
+          setIgnore(false);
+          setReset(!reset);
+        })
+        .catch(_ => {
+          setScreen('uploadError');
+        });
+    }
+  }
+
+  const deletePage = index => {
+    if (checkForChange() && !ignoreChanges) setScreen('unsaved')
+    else {
+      setScreen('upload');
+      const promises = [];
+
+      slideData[index].imgs.forEach(img => {
+        const widthPromises = img.widths.map(width =>
+          del('widths', width.id)
+        );
+        promises.push(widthPromises);
+
+        const positionPromises = img.positions.map(position =>
+          del('positions', position.id)
+        );
+        promises.push(positionPromises);
+
+        const imgPromise = del('images', img.id);
+        promises.push(imgPromise);
+      });
+
+      promises.push(del('slides', slideData[index].id));
+
+      Promise.all(promises)
+        .then(_ => {
+          setScreen('success');
+          setTimeout(() => {
+            setScreen(null);
+          }, 1000);
+          setIgnore(false);
+          setReset(!reset);
+        })
+        .catch(_ => {
+          setScreen('uploadError');
+        });
+    }
+  }
+
+
+
 
   return (
     <div>
@@ -273,7 +301,7 @@ const Portfolio = ({ jwtToken }) => {
         <Route exact path={path}>
           <div style={{ backgroundColor: 'white', paddingTop: '100px' }}>
             {screen &&
-              <Screen message={screen} closeScreen={_ => setScreen(null)} />
+              <Screen message={screen} closeScreen={_ => setScreen(null)} ignoreChanges={_ => setIgnore(true)} />
             }
             <div style={{ position: 'fixed', top: '20px', left: '20px' }}>
               <FontAwesomeIcon icon={faPlus} style={{ fontSize: '30px', cursor: 'pointer' }} onClick={_ => addPage()} />

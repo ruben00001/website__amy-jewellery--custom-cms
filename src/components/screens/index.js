@@ -80,6 +80,8 @@ const SUnsavedButtonContainer = styled.div`
 
 export default function Screen({ message, closeScreen, ignoreChanges }) {
 
+  console.log('message:', message)
+
   return (
     <SScreen>
       <SMessage>
