@@ -3,7 +3,7 @@ import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { Global } from '../../environment/global';
-
+import Screen from '../../components/screens';
 
 const SFormContainer = styled.div`
   display: flex;
@@ -92,6 +92,7 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
   const [token, setToken] = useState(null);
   const [logInError, setLogInError] = useState(false);
   const [email, setEmail] = useState();
+  const [screen, setScreen] = useState(null);
 
   const history = useHistory();
 
@@ -103,6 +104,8 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
 
   const authenticateLogIn = (e) => {
     e.preventDefault(); // prevents refresh of page on form submit
+    setScreen('login');
+
     const form = e.target;
     axios
       .post(`${strapiURL}/auth/local`, {
@@ -110,20 +113,19 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
         password: form.elements.password.value
       })
       .then(response => {
-        // Handle success.
-        console.log('Well done...you logged in!');
-        console.log('response:', response)
+        setScreen('success-login');
         setToken(response.data.jwt);
         setTimeout(() => {
           history.push("/portfolio")
         }, 800);
 
       })
-      .catch(error => {
-        // Handle error.
-        setLogInError(true);
-        form.elements.password.value = "";
-        console.log('An error occurred:', error);
+      .catch(_ => {
+        setScreen('uploadError');
+        setTimeout(() => {
+          setLogInError(true);
+          form.elements.password.value = "";
+        }, 1000);
       });
   }
 
@@ -131,6 +133,10 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
 
   return (
     <SFormContainer>
+      {
+        screen &&
+        <Screen message={screen} closeScreen={_ => setScreen(null)} />
+      }
       <SForm onSubmit={authenticateLogIn}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="email" name="email" placeholder="email"

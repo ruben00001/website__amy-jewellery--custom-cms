@@ -171,6 +171,42 @@ export default function Screen({ message, closeScreen, ignoreChanges }) {
             </SCheck>
           </>
         }
+        {
+          message === 'login' &&
+          <>
+            <h2>Please wait</h2>
+            <p>Logging in.</p>
+            <LoadingWidget />
+          </>
+        }
+        {
+          message === 'success-login' &&
+          <>
+            <h2>Success</h2>
+            <p>Logged in.</p>
+            <SCheck>
+              <FontAwesomeIcon icon={faCheck} />
+            </SCheck>
+          </>
+        }
+        {
+          message === 'forgotEmail' &&
+          <>
+            <h2>Please wait</h2>
+            <p>Sending Email.</p>
+            <LoadingWidget />
+          </>
+        }
+                {
+          message === 'success-forgot' &&
+          <>
+            <h2>Email sent</h2>
+            <p>Please check your inbox (including spam).</p>
+            <SCheck>
+              <FontAwesomeIcon icon={faCheck} />
+            </SCheck>
+          </>
+        }
       </SMessage>
     </SScreen>
   )

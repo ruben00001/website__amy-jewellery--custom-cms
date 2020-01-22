@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { Global } from '../../environment/global';
+import Screen from '../../components/screens';
 
 
 const SForm_Container = styled.div`
@@ -74,8 +75,7 @@ const SForgot = styled.div`
 `
 
 const SError = styled.p`
-  opacity: ${props => props.emailError ? 1 : 0};
-  align-self: flex-end;
+  /* align-self: flex-end; */
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   color: #D93025;
@@ -83,8 +83,7 @@ const SError = styled.p`
 `
 
 const SSuccess = styled.p`
-  opacity: ${props => props.emailSuccess ? 1 : 0};
-  align-self: flex-end;
+  /* align-self: flex-end; */
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   color: #12C2AB;
@@ -119,34 +118,39 @@ export default function ForgotPassword() {
 
   const [emailError, setEmailError] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [screen, setScreen] = useState(null);
 
   const strapiURL = Global.strapiURL;
 
   const sendPasswordReset = (e) => {
-    e.preventDefault(); // prevents refresh of page on form submit
+    e.preventDefault();
+    setScreen('forgotEmail');
+
     const form = e.target;
     axios
       .post(`${strapiURL}/auth/forgot-password`, {
-        email: form.elements.email.value,
-        url:
-          'http://localhost:3000/reset-password',
+        email: form.elements.email.value
       })
-      .then(response => {
-        // Handle success.
+      .then(_ => {
+        setScreen('success-forgot');
         setSuccess(true);
-        console.log('Your user received an email');
+        setTimeout(() => {
+          setScreen(null);
+        }, 2000);
       })
-      .catch(error => {
-        // Handle error.
+      .catch(_ => {
+        setScreen('uploadError');
         setEmailError(true);
-        console.log('An error occurred:', error);
       });
   }
 
 
-
   return (
     <SForm_Container>
+      {
+        screen &&
+        <Screen message={screen} closeScreen={_ => setScreen(null)} />
+      }
       <SForm onSubmit={sendPasswordReset}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput_Container>
@@ -162,16 +166,18 @@ export default function ForgotPassword() {
           <SForgot>
             <Link to="/">Go Back</Link>
           </SForgot>
-          <SError
-            emailError={emailError}
-          >
-            Incorrect email.
-          </SError>
-          <SSuccess
-            emailSuccess={success}
-          >
-            Email sent.
-          </SSuccess>
+          {
+            emailError &&
+            <SError>
+              Incorrect email.
+           </SError>
+          }
+          {
+            success &&
+            <SSuccess>
+              Email sent.
+            </SSuccess>
+          }
         </SLoginInfo>
         <SSubmit type="submit" value="Send" />
       </SForm>

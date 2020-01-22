@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { Global } from '../../environment/global';
-
+import Screen from '../../components/screens';
 
 const SForm_Container = styled.div`
   display: flex;
@@ -103,13 +103,17 @@ export default function ForgotPassword() {
 
   const [resetError, setResetError] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [screen, setScreen] = useState(null);
 
-  const resetCode = useLocation().search.match(/\=(.*)/);
+  let resetCode = useLocation().search.match(/\=(.*)/);
+  resetCode = resetCode[1];
 
   const strapiURL = Global.strapiURL;
 
   const sendNewPassword = (e) => {
-    e.preventDefault(); // prevents refresh of page on form submit
+    e.preventDefault();
+    setScreen('upload');
+
     const form = e.target;
 
     axios
@@ -118,15 +122,16 @@ export default function ForgotPassword() {
         password: form.elements.newpassword.value,
         passwordConfirmation: form.elements.confirm.value
       })
-      .then(response => {
-        // Handle success.
+      .then(_ => {
+        setScreen('success');
+        setTimeout(() => {
+          setScreen(null);
+        }, 1000);
         setResetSuccess(true);
-        console.log('Your user\'s password has been changed.');
       })
-      .catch(error => {
-        // Handle error.
+      .catch(_ => {
+        setScreen('uploadError');
         setResetError(true);
-        console.log('An error occurred:', error);
       });
   }
 
@@ -134,6 +139,10 @@ export default function ForgotPassword() {
 
   return (
     <SForm_Container>
+      {
+        screen &&
+        <Screen message={screen} closeScreen={_ => setScreen(null)} />
+      }
       <SForm onSubmit={sendNewPassword}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="password" name="newpassword" placeholder="new password"
