@@ -343,7 +343,7 @@ const Portfolio = ({ jwtToken }) => {
         </Route>
         {slideData &&
           <Route path={`${path}/:slideId`}
-            render={_ => <Slide slideData={slideData} triggerReset={_ => setReset(!reset)} reset={reset} apiCall={apiCall} jwtToken={jwtToken} />}
+            render={_ => <Slide slideData={slideData} triggerReset={_ => setReset(!reset)} reset={reset} apiCall={apiCall} jwtToken={jwtToken} key={Math.random()} />}
           />
         }
       </Switch>

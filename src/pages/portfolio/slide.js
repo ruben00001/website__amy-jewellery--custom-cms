@@ -216,7 +216,8 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
   }, [slideData, device.width, deviceScale]);
 
   useEffect(_ => {
-    
+    console.log('pgCurrent:', pgCurrent)
+    console.log('pgImgs:', pgImgs)
 
     const getValue = (img, property) => {
       const values = img[property].map(size => size.screen);
@@ -230,7 +231,7 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
 
     let values = [];
 
-    pgImgs.forEach(img => {
+    pgImgs.forEach(img => {      
       values.push({
         id: img.id,
         num: img.num,
@@ -238,6 +239,7 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
         width: getValue(img, 'widths')
       });
     });
+    console.log('values:', values)
 
     setImgsValues(values);
   }, [slideData, device.width]); // adding slideData to force recreation of imgValues after new image upload. But leads to unneccessary retriggering after upload of new width and pos values
