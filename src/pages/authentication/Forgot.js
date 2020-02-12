@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
@@ -38,12 +38,12 @@ const SInput = styled.input`
   width: 400px;
   height: 45px;
   margin-bottom: 10px;
-  border: ${props => !props.emailError ? props.emailSuccess ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
+  border: ${props => !props.error ? props.emailSuccess ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
   border-radius: 4px;
   padding-left: 10px;
   outline: none;
   font-family: 'Roboto', sans-serif;
-  transition: ${props => props.emailError ? 'border .2s' : 'border .1s'};
+  transition: ${props => props.error ? 'border .2s' : 'border .1s'};
 
   :focus {
     border: 1px solid #287AE6;
@@ -114,9 +114,9 @@ const SSubmit = styled.input`
 
 
 
-export default function ForgotPassword() {
+export function Forgot() {
 
-  const [emailError, setEmailError] = useState(false);
+  const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
   const [screen, setScreen] = useState(null);
 
@@ -126,10 +126,11 @@ export default function ForgotPassword() {
     e.preventDefault();
     setScreen('forgotEmail');
 
-    const form = e.target;
+    const email = e.target.elements.email.value;
+    console.log('email:', email)
     axios
       .post(`${strapiURL}/auth/forgot-password`, {
-        email: form.elements.email.value
+        email: email
       })
       .then(_ => {
         setScreen('success-forgot');
@@ -138,9 +139,10 @@ export default function ForgotPassword() {
           setScreen(null);
         }, 2000);
       })
-      .catch(_ => {
+      .catch(res => {
+        console.log('res:', res)
         setScreen('uploadError');
-        setEmailError(true);
+        setError(true);
       });
   }
 
@@ -157,8 +159,8 @@ export default function ForgotPassword() {
           <SInput_Info>Enter email for password recovery</SInput_Info>
           <SInput type="email" name="email"
             defaultValue={useLocation().state.email}
-            onKeyDown={_ => emailError ? setEmailError(false) : null}
-            emailError={emailError}
+            onKeyDown={_ => error ? setError(false) : null}
+            error={error}
             emailSuccess={success}
           />
         </SInput_Container>
@@ -167,7 +169,7 @@ export default function ForgotPassword() {
             <Link to="/">Go Back</Link>
           </SForgot>
           {
-            emailError &&
+            error &&
             <SError>
               Incorrect email.
            </SError>

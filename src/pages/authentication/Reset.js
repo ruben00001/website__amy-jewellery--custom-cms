@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { Global } from '../../environment/global';
@@ -33,12 +33,12 @@ const SInput = styled.input`
   width: 400px;
   height: 40px;
   margin-bottom: 10px;
-  border: ${props => !props.resetError ? props.resetSuccess ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
+  border: ${props => !props.error ? props.success ? '1px solid #12C2AB' : '1px solid #DADCE0' : '1px solid #D93025'};
   border-radius: 4px;
   padding-left: 10px;
   outline: none;
   font-family: 'Roboto', sans-serif;
-  transition: ${props => props.resetSuccess ? 'border .2s' : 'border .1s'};
+  transition: ${props => props.success ? 'border .2s' : 'border .1s'};
 
   :focus {
     border: 1px solid #287AE6;
@@ -58,7 +58,7 @@ const SForgot = styled.div`
 `
 
 const SError = styled.p`
-  display: ${props => props.resetError ? 'block' : 'none'};
+  display: ${props => props.error ? 'block' : 'none'};
   align-self: flex-end;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
@@ -67,7 +67,7 @@ const SError = styled.p`
 `
 
 const SSuccess = styled.p`
-  display: ${props => props.resetSuccess ? 'block' : 'none'};
+  display: ${props => props.success ? 'block' : 'none'};
   align-self: flex-end;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
@@ -99,10 +99,10 @@ const SSubmit = styled.input`
 
 
 
-export default function ForgotPassword() {
+export function Reset() {
 
-  const [resetError, setResetError] = useState(false);
-  const [resetSuccess, setResetSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [screen, setScreen] = useState(null);
 
   let resetCode = useLocation().search.match(/\=(.*)/);
@@ -127,11 +127,11 @@ export default function ForgotPassword() {
         setTimeout(() => {
           setScreen(null);
         }, 1000);
-        setResetSuccess(true);
+        setSuccess(true);
       })
       .catch(_ => {
         setScreen('uploadError');
-        setResetError(true);
+        setError(true);
       });
   }
 
@@ -146,26 +146,26 @@ export default function ForgotPassword() {
       <SForm onSubmit={sendNewPassword}>
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="password" name="newpassword" placeholder="new password"
-          onKeyDown={_ => resetError ? setResetError(false) : null}
-          resetError={resetError}
-          resetSuccess={resetSuccess}
+          onKeyDown={_ => error ? setError(false) : null}
+          error={error}
+          success={success}
         />
         <SInput type="password" name="confirm" placeholder="confirm password"
-          onKeyDown={_ => resetError ? setResetError(false) : null}
-          resetError={resetError}
-          resetSuccess={resetSuccess}
+          onKeyDown={_ => error ? setError(false) : null}
+          error={error}
+          success={success}
         />
         <SLoginInfo>
           <SForgot>
             <Link to="/">Back to Login</Link>
           </SForgot>
           <SError
-            resetError={resetError}
+            error={error}
           >
             Invalid password(s).
           </SError>
           <SSuccess
-            resetSuccess={resetSuccess}
+            success={success}
           >
             Password changed.
           </SSuccess>

@@ -216,11 +216,7 @@ const Slide = ({ slideData, triggerReset, reset, apiCall, jwtToken }) => {
   }, [slideData, device.width, deviceScale]);
 
   useEffect(_ => {
-    console.log('====================================');
-    console.log('IMG VALUE CREATION INITIATED..');
-    console.log('====================================');
-
-    console.log('pgImgs:', pgImgs)
+    
 
     const getValue = (img, property) => {
       const values = img[property].map(size => size.screen);

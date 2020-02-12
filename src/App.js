@@ -1,12 +1,9 @@
 import './style.scss';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
 import React, { useState } from 'react';
-import Login from './pages/login';
-import ForgotPassword from './pages/login/forgotPassword';
-import ResetPassword from './pages/login/resetPassword';
+import { Login, Forgot, Reset } from './pages/authentication/';
 import Portfolio from './pages/portfolio';
-// import Contact from './pages/contact';
-// import Shop from './pages/shop';
+
 
 function App() {
 
@@ -24,20 +21,18 @@ function App() {
           <Login storeJwtTokenAtRoot={storeJwtTokenAtRoot} />
         </Route>
         <Route path="/forgot-password">
-          <ForgotPassword />
+          <Forgot />
         </Route>
         <Route path="/reset-password">
-          <ResetPassword />
+          <Reset />
         </Route>
-        <Route path="/portfolio"
-          render={_ => <Portfolio jwtToken={jwtToken} />}
-        />
-
-        {/* <Route path="/portfolio">
-          <Portfolio jwtToken={jwtToken} />
-        </Route> */}
-        {/* <Route path="/contact" component={Contact} />
-        <Route path="/shop" component={Shop} /> */}
+        {
+          jwtToken ?
+            <Route path="/portfolio"
+              render={_ => <Portfolio jwtToken={jwtToken} />}
+            /> :
+            <Redirect to={'/'} />
+        }
       </Switch>
     </BrowserRouter>
   );

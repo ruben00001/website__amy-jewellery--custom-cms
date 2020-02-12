@@ -41,7 +41,6 @@ const Portfolio = ({ jwtToken }) => {
   const [nums, setNums] = useState([]);
   const [screen, setScreen] = useState(null);
   const [reset, setReset] = useState(false);
-  const [unsaved, setUnsaved] = useState(false);
   const [ignoreChanges, setIgnore] = useState(false);
 
 

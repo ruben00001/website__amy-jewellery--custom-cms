@@ -1,63 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { Global } from '../../environment/global';
 import Screen from '../../components/screens';
 
-const SFormContainer = styled.div`
+
+const FlexDiv = styled.div`
   display: flex;
+`;
+
+const SFormContainer = styled(FlexDiv)`
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
-`
+`;
 
 const Title = styled.h1`
-  font-family: 'Roboto', sans-serif;
   font-size: 26px;
   margin-bottom: 60px;
-`
+`;
 
 const SForm = styled.form`
   display: flex;
   flex-direction: column;
-`
+`;
 
 const SInput = styled.input`
   width: 400px;
   height: 50px;
   margin-bottom: 10px;
-  border: ${props => props.logInError ? '1px solid #D93025' : '1px solid #DADCE0'};
+  border: ${props => props.error ? '1px solid #D93025' : '1px solid #DADCE0'};
   border-radius: 4px;
   padding-left: 10px;
   outline: none;
-  font-family: 'Roboto', sans-serif;
-  transition: ${props => props.logInError ? 'border .2s' : 'border .1s'};
-  /* transition: border .2s; */
+  transition: ${props => props.error ? 'border .2s' : 'border .1s'};
 
   :focus {
     border: 1px solid #287AE6;
   }
 `
 
-const SLoginInfo = styled.div`
-  display: flex;
+const SLoginInfo = styled(FlexDiv)`
   justify-content: space-between;
   margin-top: 10px;
-`
+`;
 
 const SForgot = styled.div`
-  font-family: 'Roboto', sans-serif;
   font-size: 14px;
   color: #287AE6;
 `
 
-
 const SError = styled.p`
-  opacity: ${props => props.logInError ? 1 : 0};
+  opacity: ${props => props.error ? 1 : 0};
   align-self: flex-end;
-  font-family: 'Roboto', sans-serif;
   font-size: 12px;
   color: #D93025;
   transition: opacity .2s;
@@ -72,7 +69,6 @@ const SSubmit = styled.input`
   background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
   border-radius: 4px;
   color: white;
-  font-family: 'Roboto', sans-serif;
   font-size: 16px;
   align-self: flex-end;
   cursor: pointer;
@@ -86,11 +82,9 @@ const SSubmit = styled.input`
 `
 
 
+export function Login({ storeJwtTokenAtRoot }) {
 
-export default function Login({ storeJwtTokenAtRoot }, props) {
-
-  const [token, setToken] = useState(null);
-  const [logInError, setLogInError] = useState(false);
+  const [error, setError] = useState(false);
   const [email, setEmail] = useState();
   const [screen, setScreen] = useState(null);
 
@@ -98,12 +92,8 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
 
   const strapiURL = Global.strapiURL;
 
-  useEffect(_ => {
-    storeJwtTokenAtRoot(token)
-  }, [token]);
-
   const authenticateLogIn = (e) => {
-    e.preventDefault(); // prevents refresh of page on form submit
+    e.preventDefault();
     setScreen('login');
 
     const form = e.target;
@@ -112,24 +102,21 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
         identifier: form.elements.email.value,
         password: form.elements.password.value
       })
-      .then(response => {
+      .then(res => {
         setScreen('success-login');
-        setToken(response.data.jwt);
+        storeJwtTokenAtRoot(res.data.jwt);
         setTimeout(() => {
           history.push("/portfolio")
         }, 800);
-
       })
       .catch(_ => {
         setScreen('uploadError');
         setTimeout(() => {
-          setLogInError(true);
+          setError(true);
           form.elements.password.value = "";
         }, 1000);
       });
   }
-
-
 
   return (
     <SFormContainer>
@@ -141,11 +128,11 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
         <Title>Amy Rodriguez Jewellery</Title>
         <SInput type="email" name="email" placeholder="email"
           onChange={e => setEmail(e.target.value)}
-          onKeyDown={_ => logInError ? setLogInError(false) : null}
-          logInError={logInError}
+          onKeyDown={_ => error ? setError(false) : null}
+          error={error}
         />
         <SInput type="password" name="password" placeholder="password"
-          logInError={logInError}
+          error={error}
         />
         <SLoginInfo>
           <SForgot>
@@ -159,7 +146,7 @@ export default function Login({ storeJwtTokenAtRoot }, props) {
             </Link>
           </SForgot>
           <SError
-            logInError={logInError}
+            error={error}
           >
             Incorrect password or email.
           </SError>
