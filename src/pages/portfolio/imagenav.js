@@ -30,20 +30,20 @@ function ImageNav({ previousPage, nextPage, unsavedChange, setScreen }) {
       <SSlideLink
         onClick={_ => { if (unsavedChange) setScreen(previousPage) }}
       >
-        <Link to={`/portfolio/${previousPage}`}
+        {/* <Link to={`/portfolio/${previousPage}`}
           style={unsavedChange ? { pointerEvents: 'none' } : null}
-        >
+        > */}
           previous page
-        </Link>
+        {/* </Link> */}
       </SSlideLink>
       <SSlideLink
         onClick={_ => unsavedChange ? setScreen(nextPage) : null}
       >
-        <Link to={`/portfolio/${nextPage}`}
+        {/* <Link to={`/portfolio/${nextPage}`}
           style={unsavedChange ? { pointerEvents: 'none' } : null}
-        >
+        > */}
           next page
-        </Link>
+        {/* </Link> */}
       </SSlideLink>
     </SSlideLinkContainer>
   )
