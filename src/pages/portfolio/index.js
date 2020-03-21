@@ -68,17 +68,19 @@ const Portfolio = ({ jwtToken }) => {
       .then(response => {
 
         slides = response.data.map(slide => {
-
           return {
             id: slide.id,
             num: slide.num,
-            imgs: slide.images.map(image => {
-              return {
-                id: image.id,
-                num: image.num,
-                url: image.image.url
-              }
-            })
+            imgs: slide.images
+              .filter(image => image.image)
+              .map(image => {
+                if (!image.image) console.log(slide);
+                return {
+                  id: image.id,
+                  num: image.num,
+                  url: image.image.url
+                }
+              })
           }
         });
 
